@@ -1,0 +1,34 @@
+
+.shell{min-height:100vh;background:#f6f7fb;color:#17181c;font-family:Arial,Helvetica,sans-serif}
+.center{display:flex;align-items:center;justify-content:center;padding:40px}
+.nav{min-height:64px;display:flex;align-items:center;justify-content:space-between;padding:0 28px;background:#fff;border-bottom:1px solid #e5e7eb;gap:16px}
+.brand{font-weight:700;font-size:18px;display:flex;align-items:center;gap:8px}
+.mark{display:inline-flex;width:30px;height:30px;align-items:center;justify-content:center;border-radius:8px;background:#111;color:#fff}
+.actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.navLink,.download{color:#2563eb;text-decoration:none;font-weight:600}
+.adminPanel{max-width:1200px;margin:0 auto;padding:28px}
+.adminGrid{display:grid;grid-template-columns:1fr;gap:18px}
+.panel{background:#fff;border:1px solid #e5e7eb;border-radius:14px;padding:22px;box-shadow:0 2px 8px rgba(0,0,0,.04)}
+.panel h2{margin:0 0 7px;font-size:20px}
+.muted{color:#6b7280;font-size:14px;line-height:1.5}
+.sectionForm{display:grid;grid-template-columns:2fr 2fr auto;gap:10px;align-items:center}
+.search{width:100%;box-sizing:border-box;padding:11px 12px;border:1px solid #d1d5db;border-radius:9px;background:#fff;font:inherit}
+.primary,.secondary{border:0;border-radius:9px;padding:10px 15px;font:inherit;font-weight:600;cursor:pointer}
+.primary{background:#111;color:#fff}
+.secondary{background:#f3f4f6;color:#111}
+.primary:disabled,.secondary:disabled{opacity:.5;cursor:not-allowed}
+.item{display:flex;justify-content:space-between;align-items:center;gap:16px;padding:15px 0;border-top:1px solid #eee}
+.item:first-of-type{margin-top:12px}
+.item>b{font-size:14px}
+.ok{color:#166534}
+.danger{color:#b91c1c}
+.notice{padding:13px 15px;border-radius:10px}
+.success{background:#ecfdf5;color:#166534;border:1px solid #bbf7d0}
+.small{font-size:13px;color:#6b7280}
+.download{padding:9px 12px;background:#eff6ff;border-radius:8px}
+@media (max-width:700px){
+ .nav{padding:0 15px}.adminPanel{padding:15px}.panel{padding:17px}
+ .sectionForm{grid-template-columns:1fr}
+ .item{align-items:flex-start;flex-direction:column}
+ .item .actions{width:100%}
+}
