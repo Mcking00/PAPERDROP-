@@ -1,3 +1,4 @@
+
 import type { Metadata } from 'next';
 import './globals-mobile-fixed.css';
 import { AmplifyClient } from '@/components/amplify-client';
