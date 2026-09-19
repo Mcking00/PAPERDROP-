@@ -7,7 +7,7 @@ export const metadata: Metadata = {
   description:
     'A cinematic document sharing and discovery platform.',
   keywords: [
-    'PaperDrop',
+    'PaperDrop', 
     'PDF',
     'documents',
     'file sharing',
