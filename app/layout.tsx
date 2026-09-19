@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import './globals.css';
+import 'app/globals-mobile-fixed.css';
 import { AmplifyClient } from '@/components/amplify-client';
 
 export const metadata: Metadata = {
