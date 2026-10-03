@@ -15,9 +15,13 @@ export function isPdf(file: File): boolean { return file.type==="application/pdf
 export async function sha256(file: File): Promise<string> { const digest=await crypto.subtle.digest("SHA-256", await file.arrayBuffer()); return Array.from(new Uint8Array(digest)).map(b=>b.toString(16).padStart(2,"0")).join(""); }
 export type PdfInspection = { pageCount?: number; title?: string; author?: string };
 export async function inspectPdf(file: File): Promise<PdfInspection> {
-  const bytes=new Uint8Array(await file.arrayBuffer()); const sample=new TextDecoder("latin1").decode(bytes.subarray(0,Math.min(bytes.length,8*1024*1024)));
-  const pageCount=(sample.match(/\\/Type\\s*\\/Page(?:\\s|[>/])/g)||[]).length || undefined;
-  const readInfo=(key:string)=>{ const pattern=new RegExp("/"+key+"\\\\s*\\\\(([^)]{1,300})\\\\)","i"); const m=sample.match(pattern); return m?.[1]?.replace(/\\\\([\\\\()])/g,"$1").trim() || undefined; };
+  const bytes = new Uint8Array(await file.arrayBuffer());
+  const sample = new TextDecoder("latin1").decode(bytes.subarray(0, Math.min(bytes.length, 8 * 1024 * 1024)));
+  const pageCount = (sample.match(/\/Type\s*\/Page(?:\s|[>\/])/g) || []).length || undefined;
+  const readInfo = (key: string): string | undefined => {
+    const match = sample.match(new RegExp("/" + key + "\\s*\\(([^)]{1,300})\\)", "i"));
+    return match?.[1]?.replace(/\\([\\()])/g, "$1").trim() || undefined;
+  };
   return { pageCount, title: readInfo("Title"), author: readInfo("Author") };
 }
 export function pdfThumbData(name: string): string {
