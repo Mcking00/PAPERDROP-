@@ -1534,14 +1534,33 @@ html[data-pd-motion="reduced"] *::after {
   isolation: isolate !important;
   min-height: 100vh;
   overflow-x: hidden;
+  background: #030516 !important;
+}
 
-  /* The supplied illustration is the single base background. */
-  background-color: #030516 !important;
-  background-image: url("/anime/backgrounds/PAPERDROP-main-background.webp") !important;
-  background-repeat: no-repeat !important;
-  background-position: center top !important;
-  background-size: cover !important;
-  background-attachment: fixed !important;
+/*
+ * Alpha-proven background architecture:
+ * keep the portrait artwork in a fixed pseudo-element instead of
+ * attaching it directly to .pd-page. This keeps the artwork stable
+ * while the document scrolls and keeps all real UI above it.
+ */
+.pd-page::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+
+  background-image: url("/anime/backgrounds/PAPERDROP-main-background.webp");
+  background-repeat: no-repeat;
+  background-position: center top;
+  background-size: auto 100vh;
+  background-color: #030516;
+}
+
+/* Every real page element stays above the illustration. */
+.pd-page > * {
+  position: relative;
+  z-index: 5;
 }
 
 /* UI sections stay transparent so the illustration remains visible. */
@@ -1735,10 +1754,9 @@ html[data-pd-motion="reduced"] *::after {
    ========================================================= */
 
 @media (max-width: 700px) {
-  .pd-page {
-    background-size: cover !important;
+  .pd-page::before {
+    background-size: auto 100vh !important;
     background-position: center top !important;
-    background-attachment: fixed !important;
   }
 
   .pd-meteor::after {
@@ -1934,7 +1952,7 @@ html[data-pd-motion="reduced"] *::after {
   transform: none !important;
 }
 
-/* The base artwork is handled directly by .pd-page above. */
+/* The base artwork is rendered by the fixed ::before layer above. */
 /* Keep the page content below the fixed navigation bar. */
 .pd-page {
   padding-top: 66px !important;
