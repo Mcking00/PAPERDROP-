@@ -79,9 +79,9 @@ const subjectIcon: Record<string, string> = {
   Biology: "/anime/subjects/biology.svg",
 };
 const characterImages = [
-  "/anime/characters/hero-girl.png",
-  "/anime/characters/hero-boy.png",
-  "/anime/characters/stat-girl.png",
+  "/anime/characters/hero-girl.webp",
+  "/anime/characters/hero-boy.webp",
+  "/anime/characters/stat-girl.webp",
 ];
 
 export default function Home() {
@@ -319,7 +319,7 @@ export default function Home() {
             className="pd-avatar"
             onClick={() => setSettingsOpen((v) => !v)}
           >
-            <img src="/anime/characters/stat-girl.png" />
+            <img src="/anime/characters/stat-girl.webp" />
           </button>
           <button
             className="pd-menu-btn"
@@ -342,12 +342,12 @@ export default function Home() {
         </div>
         <Character
           className="pd-hero-girl"
-          src="/anime/characters/hero-girl.png"
+          src="/anime/characters/hero-girl.webp"
           alt="Anime guide character"
         />
         <Character
           className="pd-hero-boy"
-          src="/anime/characters/hero-boy.png"
+          src="/anime/characters/hero-boy.webp"
           alt="Anime guide character"
         />
         <Bubble className="pd-bubble-start" src="/anime/bubbles/start.svg" />
@@ -419,7 +419,7 @@ export default function Home() {
         />
         <img
           className="pd-stat-character"
-          src="/anime/characters/stat-girl.png"
+          src="/anime/characters/stat-girl.webp"
         />
       </section>
 
@@ -490,7 +490,7 @@ export default function Home() {
         </div>
         <img
           className="pd-subject-guide"
-          src="/anime/characters/stat-girl.png"
+          src="/anime/characters/stat-girl.webp"
         />
         <Bubble
           className="pd-bubble-subject"
