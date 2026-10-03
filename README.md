@@ -1,11 +1,5 @@
 # PAPERDROPL
 
-## GitHub read/write permission test
-
-TEST: ChatGPT GitHub connector write access confirmed.
-
-This line was added as a temporary permission test and will be removed after verification.
-
 ## Local full-stack development
 
 PAPERDROPL uses an AWS Amplify Gen 2 Cloud Sandbox for its real backend. The sandbox is a real, isolated AWS backend for development; it is not a local emulator.
