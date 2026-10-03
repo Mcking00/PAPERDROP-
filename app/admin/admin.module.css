@@ -44,3 +44,8 @@
 .overviewGrid{grid-template-columns:repeat(4,1fr);gap:11px}.overview{background:linear-gradient(180deg,rgba(18,22,53,.88),rgba(7,10,28,.88));border:1px solid rgba(255,255,255,.07);border-radius:17px;box-shadow:0 14px 30px rgba(0,0,0,.16)}.overview span{color:#7e89aa}.overview b{color:#eef2ff}
 .panel{background:rgba(8,11,30,.8);border:1px solid rgba(255,255,255,.08);border-radius:20px;box-shadow:0 20px 44px rgba(0,0,0,.18);backdrop-filter:blur(12px)}.panel h2{color:#f0f3ff}.field,.search{background:#0c1030!important;color:#eef2ff!important;border-color:rgba(255,255,255,.10)!important}.field::placeholder,.search::placeholder{color:#667196}
 .message{background:rgba(100,77,255,.12);color:#d9d5ff;border:1px solid rgba(126,103,255,.16)}
+
+.dropzone{min-height:120px;border:1px dashed rgba(139,118,255,.4);border-radius:17px;background:rgba(116,88,255,.045);color:#edf0ff}.dropzone span{color:#717da2}.dragging{background:rgba(116,88,255,.12);border-color:#a08cff}
+.queue{gap:8px;margin-top:11px}.queueItem{border:1px solid rgba(255,255,255,.06);border-radius:13px;background:rgba(255,255,255,.025)}.pdfBadge{background:#171333;color:#b9adff}.queueCopy b{color:#e6eaff}.queueCopy span{color:#727ea4}.compactField{background:#0c1030;color:#dfe5ff;border-color:rgba(255,255,255,.08)}.progress{background:rgba(255,255,255,.06)}.progress i{background:linear-gradient(90deg,#7157ff,#d96bd6)}
+.panelFoot{color:#707ca0}.successText{color:#76e8bd}.dangerText{color:#ff9daf}
+.filters{grid-template-columns:2fr 1fr 1fr}.statusTabs{margin-bottom:13px}.tab,.tabActive{background:rgba(255,255,255,.035);border-color:rgba(255,255,255,.08);color:#8994b6}.tabActive{background:rgba(113,87,255,.14);color:#d9d4ff;border-color:rgba(126,103,255,.18)}
