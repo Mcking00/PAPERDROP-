@@ -44,7 +44,7 @@ export default function Home(){
  const [queue,setQueue]=useState<UploadItem[]>([]),[uploadBusy,setUploadBusy]=useState(false),[drag,setDrag]=useState(false),[uploadMessage,setUploadMessage]=useState(""),[draftRestore,setDraftRestore]=useState(false);
  const load=useCallback(async()=>{setLoading(true);setError("");if(LOCAL_DEMO){setSections(DEMO_SECTIONS);setDocs([]);setLoading(false);return}try{const [s,d]=await Promise.all([client.models.Section.list({authMode:"identityPool"}),client.models.Document.list({authMode:"identityPool"})]);const e=s.errors?.[0]?.message||d.errors?.[0]?.message;if(e)throw new Error(e);setSections([...s.data].sort((a,b)=>(a.sortOrder??0)-(b.sortOrder??0)));setDocs(d.data.filter(x=>(x.status??"published")==="published"))}catch(e){setError(e instanceof Error?e.message:"Library could not be loaded.")}finally{setLoading(false)}},[]);
  useEffect(()=>{void load()},[load]);
- useEffect(()=>{const raw=localStorage.getItem("paperdropl-upload-draft");if(raw){try{const items=JSON.parse(raw);if(items.length)setDraftRestore(true)}catch{}}},[]);
+ useEffect(()=>{void loadPublicDraft().then(items=>{if(items.length)setDraftRestore(true)})},[]);
  useEffect(()=>{if(!toast)return;const id=window.setTimeout(()=>setToast(""),3600);return()=>window.clearTimeout(id)},[toast]);
  const map=useMemo(()=>new Map(sections.map(s=>[s.id,s])),[sections]);
  const roots=useMemo(()=>sections.filter(s=>!s.parentId),[sections]);
