@@ -58,3 +58,19 @@ in another.
 ## Important
 
 The archive intentionally does not contain generated build/cache directories. Amplify should build those during deployment.
+
+## Post-upgrade verification
+
+- The backend build now always runs `npx ampx pipeline-deploy` so later frontend-only commits cannot accidentally skip a pending Amplify schema change.
+- The backend phase also runs `npx ampx generate outputs --branch $AWS_BRANCH --app-id $AWS_APP_ID` so the frontend build receives outputs for the deployed branch.
+- Current application code includes the expanded Section, Submission, Document, DocumentVersion, Report, and ActivityLog schema. A cloud deployment is still required before those new backend models/fields can work against the production environment.
+
+## Known incomplete items
+
+- True first-page PDF thumbnails are not generated yet; cards use a lightweight fallback when `thumbnailPath` is empty.
+- There is no backend PDF-processing function yet; metadata/hash validation currently runs in the browser.
+- Public/admin upload queues are implemented separately rather than through one shared upload engine.
+- Public search is client-side over loaded records; large-library pagination/server-side search is not implemented.
+- Admin bulk reject, select-all/deselect-all, Delete-key trash shortcut, and activity-log-specific search are not implemented yet.
+- The admin actor is currently recorded as a generic `admin` string rather than the signed-in user's identity.
+- The global CSS file still contains accumulated legacy rules and upgrade overrides rather than a full consolidation pass.
