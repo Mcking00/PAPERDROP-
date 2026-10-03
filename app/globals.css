@@ -2018,3 +2018,6 @@ html[data-pd-motion="reduced"] *::after {
 .pd-library-error button { border: 1px solid rgba(255,255,255,.16); border-radius: 999px; padding: 9px 16px; background: rgba(255,255,255,.08); color: inherit; cursor: pointer; }
 @keyframes pdSkeletonShimmer { 100% { transform: translateX(100%); } }
 @media (prefers-reduced-motion: reduce) { .pd-skeleton::after { animation: none; } }
+
+/* PAPERDROPL upgrade styles */
+.pd-page{min-height:100vh;color:#f3f5ff;}
