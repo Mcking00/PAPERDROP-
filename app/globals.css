@@ -1934,15 +1934,7 @@ html[data-pd-motion="reduced"] *::after {
   transform: none !important;
 }
 
-/* The nightscape is fixed independently of page scrolling. */
-.pd-page::before {
-  position: fixed !important;
-  inset: 0 !important;
-  background-repeat: no-repeat !important;
-  background-position: center top !important;
-  background-size: auto 100vh !important;
-}
-
+/* The base artwork is handled directly by .pd-page above. */
 /* Keep the page content below the fixed navigation bar. */
 .pd-page {
   padding-top: 66px !important;
@@ -1952,11 +1944,6 @@ html[data-pd-motion="reduced"] *::after {
 @media (max-width: 700px) {
   .pd-page {
     padding-top: 58px !important;
-  }
-
-  .pd-page::before {
-    background-size: auto 100vh !important;
-    background-position: center top !important;
   }
 
   .pd-nav {
