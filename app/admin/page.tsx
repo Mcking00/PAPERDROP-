@@ -1,194 +1,93 @@
 'use client';
-
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Authenticator, useAuthenticator } from '@aws-amplify/ui-react';
 import { fetchAuthSession } from 'aws-amplify/auth';
-import { uploadData, copy, remove } from 'aws-amplify/storage';
+import { uploadData, copy, remove, getUrl } from 'aws-amplify/storage';
 import { generateClient } from 'aws-amplify/data';
 import type { Schema } from '@/amplify/data/resource';
 import Link from 'next/link';
 import '@aws-amplify/ui-react/styles.css';
 import styles from './admin.module.css';
 
-const client = generateClient<Schema>();
-type Section = Schema['Section']['type'];
-type Submission = Schema['Submission']['type'];
-type Document = Schema['Document']['type'];
+const client=generateClient<Schema>();
+type Section=Schema['Section']['type']; type Submission=Schema['Submission']['type']; type Document=Schema['Document']['type']; type Report=Schema['Report']['type']; type Activity=Schema['ActivityLog']['type'];
+type QItem={id:string;file:File;sectionId:string;progress:number;status:'queued'|'uploading'|'done'|'error';error?:string};
+const MAX=50*1024*1024;
+function size(n?:number|null){const x=Number(n??0);if(!x)return '—';if(x<1024)return x+' B';if(x<1024**2)return (x/1024).toFixed(0)+' KB';if(x<1024**3)return (x/1024**2).toFixed(1)+' MB';return (x/1024**3).toFixed(2)+' GB'}
+function date(v?:string|null){if(!v)return '—';const d=new Date(v);return Number.isNaN(d.getTime())?'—':new Intl.DateTimeFormat('en-IN',{day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'}).format(d)}
+function norm(v:unknown){return String(v??'').toLowerCase().trim()}
+async function hashFile(file:File){const b=await crypto.subtle.digest('SHA-256',await file.arrayBuffer());return Array.from(new Uint8Array(b)).map(x=>x.toString(16).padStart(2,'0')).join('')}
+async function metaFile(file:File){const text=new TextDecoder('latin1').decode(new Uint8Array(await file.arrayBuffer()).subarray(0,Math.min(file.size,8*1024*1024)));const pages=(text.match(/\/Type\s*\/Page(?:\s|[>\/])/g)||[]).length||undefined;const read=(k:string)=>{const m=text.match(new RegExp('/'+k+'\\s*\\(([^)]{1,260})\\)','i'));return m?.[1]?.replace(/\\([\\()])/g,'$1').trim()||undefined};return{pages,title:read('Title'),author:read('Author')}}\n\nexport default function AdminPage(){return <Authenticator hideSignUp><AdminArea/></Authenticator>}
 
-export default function AdminPage() {
-  return <Authenticator hideSignUp><AdminArea /></Authenticator>;
+function AdminArea(){
+ const {signOut}=useAuthenticator();
+ const [allowed,setAllowed]=useState<boolean|null>(null),[pending,setPending]=useState<Submission[]>([]),[docs,setDocs]=useState<Document[]>([]),[sections,setSections]=useState<Section[]>([]),[reports,setReports]=useState<Report[]>([]),[activity,setActivity]=useState<Activity[]>([]);
+ const [busy,setBusy]=useState(''),[message,setMessage]=useState(''),[query,setQuery]=useState(''),[statusFilter,setStatusFilter]=useState('attention'),[submissionFilter,setSubmissionFilter]=useState('pending'),[sectionFilter,setSectionFilter]=useState('all'),[sort,setSort]=useState('newest');
+ const [selectedIds,setSelectedIds]=useState<string[]>([]),[detail,setDetail]=useState<Document|Submission|null>(null),[detailUrl,setDetailUrl]=useState(''),[shortcutHelp,setShortcutHelp]=useState(false),[replaceTarget,setReplaceTarget]=useState<Document|null>(null),[undoDoc,setUndoDoc]=useState<Document|null>(null);
+ const [name,setName]=useState(''),[description,setDescription]=useState(''),[parentId,setParentId]=useState(''),[editingSection,setEditingSection]=useState<Section|null>(null),[deleteSection,setDeleteSection]=useState<Section|null>(null),[deleteDestination,setDeleteDestination]=useState('');
+ const [queue,setQueue]=useState<QItem[]>([]),[drag,setDrag]=useState(false),[queueSection,setQueueSection]=useState('');
+ const replaceInput=useRef<HTMLInputElement>(null); const searchRef=useRef<HTMLInputElement>(null);
+
+ async function logAction(action:string,entityType:string,entityId:string|null|undefined,summary:string,metadata?:unknown){await client.models.ActivityLog.create({action,entityType,entityId,summary,actor:'admin',metadata:metadata?JSON.stringify(metadata):undefined},{authMode:'userPool'}).catch(()=>undefined)}
+ async function load(){setMessage('');try{const[p,d,s,r,a]=await Promise.all([client.models.Submission.list({authMode:'userPool'}),client.models.Document.list({authMode:'userPool'}),client.models.Section.list({authMode:'userPool'}),client.models.Report.list({authMode:'userPool'}),client.models.ActivityLog.list({authMode:'userPool'})]);const err=p.errors?.[0]?.message||d.errors?.[0]?.message||s.errors?.[0]?.message||r.errors?.[0]?.message||a.errors?.[0]?.message;if(err)throw new Error(err);setPending(p.data);setDocs(d.data);setSections([...s.data].sort((x,y)=>(x.sortOrder??0)-(y.sortOrder??0)));setReports([...r.data].sort((x,y)=>new Date(y.createdAt||0).getTime()-new Date(x.createdAt||0).getTime()));setActivity([...a.data].sort((x,y)=>new Date(y.createdAt||0).getTime()-new Date(x.createdAt||0).getTime()).slice(0,80))}catch(e){setMessage(e instanceof Error?e.message:'Could not load admin data.')}}
+ useEffect(()=>{fetchAuthSession().then(s=>{const g=s.tokens?.accessToken?.payload?.['cognito:groups'];const ok=Array.isArray(g)&&g.includes('ADMINS');setAllowed(ok);if(ok)void load()}).catch(()=>setAllowed(false))},[])
+ useEffect(()=>{const fn=(e:KeyboardEvent)=>{if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='k'){e.preventDefault();searchRef.current?.focus()}if(e.key==='Escape'){setDetail(null);setDeleteSection(null);setShortcutHelp(false)}if(detail&&e.key.toLowerCase()==='p'&&detailUrl)window.open(detailUrl,'_blank','noopener,noreferrer');if(detail&&e.key.toLowerCase()==='a'&&'status' in detail&&detail.status==='pending')void approve(detail as Submission);if(detail&&e.key.toLowerCase()==='r'&&'status' in detail&&detail.status==='pending')void reject(detail as Submission)};window.addEventListener('keydown',fn);return()=>window.removeEventListener('keydown',fn)},[detail,detailUrl])
+
+ const sectionMap=useMemo(()=>new Map(sections.map(s=>[s.id,s])),[sections]);
+ const childCount=useMemo(()=>{const m=new Map<string,number>();sections.forEach(s=>{if(s.parentId)m.set(s.parentId,(m.get(s.parentId)||0)+1)});return m},[sections]);
+ const docCount=useMemo(()=>{const m=new Map<string,number>();docs.forEach(d=>m.set(d.sectionId,(m.get(d.sectionId)||0)+1));return m},[docs]);
+ const matches=(value:string)=>!query||norm(value).includes(norm(query));
+ const publishedDocs=useMemo(()=>{let list=docs.filter(d=>sectionFilter==='all'||d.sectionId===sectionFilter).filter(d=>{const s=(d.status??'published');if(statusFilter==='published')return s==='published';if(statusFilter==='trash')return s==='trashed';if(statusFilter==='attention')return s==='published'||s==='trashed';return true}).filter(d=>matches([d.originalName,d.title,d.author,sectionMap.get(d.sectionId)?.name].filter(Boolean).join(' ')));if(sort==='az')list.sort((a,b)=>norm(a.originalName).localeCompare(norm(b.originalName)));else if(sort==='size')list.sort((a,b)=>(b.size??0)-(a.size??0));else list.sort((a,b)=>new Date(b.updatedAt||b.createdAt||0).getTime()-new Date(a.updatedAt||a.createdAt||0).getTime());return list},[docs,query,sectionFilter,sort,statusFilter,sectionMap]);
+ const pendingFiltered=useMemo(()=>pending.filter(x=>(submissionFilter==='all'||x.status===submissionFilter)&&matches([x.originalName,sectionMap.get(x.sectionId)?.name].join(' '))&&(sectionFilter==='all'||x.sectionId===sectionFilter)),[pending,query,sectionFilter,sectionMap,submissionFilter]);
+ const reportFiltered=useMemo(()=>reports.filter(r=>(r.status??'open')==='open'&&matches([r.reason,r.description,docs.find(d=>d.id===r.documentId)?.originalName].join(' '))),[docs,reports,query]);
+ const attentionCount=pending.filter(x=>x.status==='pending').length+reportFiltered.length;
+ const focusedDetailUrl=async(item:Document|Submission)=>{const p=item.storagePath;try{const r=await getUrl({path:p});setDetailUrl(r.url.toString())}catch{setDetailUrl('')}};
+ function openDetail(item:Document|Submission){setDetail(item);setDetailUrl('');void focusedDetailUrl(item)}
+ function qadd(files:FileList|File[]){const accepted:QItem[]=[];for(const f of Array.from(files)){if(f.type!=='application/pdf'&&!f.name.toLowerCase().endsWith('.pdf')){setMessage(f.name+': PDF only');continue}if(f.size>MAX){setMessage(f.name+': max 50 MB');continue}accepted.push({id:crypto.randomUUID(),file:f,sectionId:queueSection||sections[0]?.id||'',progress:0,status:'queued'})}if(accepted.length)setQueue(q=>[...q,...accepted])}
+ function qpatch(id:string,p:Partial<QItem>){setQueue(q=>q.map(x=>x.id===id?{...x,...p}:x))}
+ async function publishQueue(){if(busy||!queue.length)return;setBusy('queue');let count=0;for(const item of queue.filter(x=>x.status==='queued'||x.status==='error')){if(!item.sectionId){qpatch(item.id,{status:'error',error:'Choose a section.'});continue}qpatch(item.id,{status:'uploading',progress:0,error:undefined});let path='';try{const h=await hashFile(item.file),m=await metaFile(item.file);if(docs.some(d=>d.fileHash===h)||pending.some(s=>s.fileHash===h)){qpatch(item.id,{status:'error',error:'Duplicate file detected.'});continue}path='public/'+crypto.randomUUID()+'.pdf';await uploadData({path,data:item.file,options:{contentType:'application/pdf',onProgress:({transferredBytes,totalBytes})=>qpatch(item.id,{progress:Math.min(99,totalBytes?Math.round(transferredBytes/totalBytes*100):0)})}}).result;const r=await client.models.Document.create({originalName:item.file.name.slice(0,180),storagePath:path,size:item.file.size,sectionId:item.sectionId,status:'published',pageCount:m.pages,title:m.title,author:m.author,fileHash:h,processingStatus:'complete',publishedAt:new Date().toISOString(),currentVersion:1},{authMode:'userPool'});if(r.errors?.length)throw new Error(r.errors[0].message);await logAction('upload','Document',r.data?.id,item.file.name);qpatch(item.id,{status:'done',progress:100});count++}catch(e){if(path)await remove({path}).catch(()=>undefined);qpatch(item.id,{status:'error',error:e instanceof Error?e.message:'Upload failed.'})}}setBusy('');if(count){setMessage(count+' PDF'+(count>1?'s':'')+' published.');setQueue(q=>q.filter(x=>x.status!=='done'));await load()}}
+ async function approve(item:Submission){setBusy(item.id);try{const dest='public/'+item.id+'.pdf';await copy({source:{path:item.storagePath},destination:{path:dest}});const r=await client.models.Document.create({originalName:item.originalName,storagePath:dest,size:item.size,sectionId:item.sectionId,status:'published',pageCount:item.pageCount,title:item.title,author:item.author,fileHash:item.fileHash,processingStatus:item.processingStatus||'complete',publishedAt:new Date().toISOString(),currentVersion:1},{authMode:'userPool'});if(r.errors?.length)throw new Error(r.errors[0].message);await remove({path:item.storagePath});const u=await client.models.Submission.update({id:item.id,status:'approved'} ,{authMode:'userPool'});if(u.errors?.length)throw new Error(u.errors[0].message);await logAction('approve','Submission',item.id,'Approved '+item.originalName,{documentId:r.data?.id});setMessage('Published successfully.');await load()}catch(e){setMessage(e instanceof Error?e.message:'Approval failed.')}finally{setBusy('')}}
+ async function reject(item:Submission){if(!window.confirm('Reject '+item.originalName+'?'))return;setBusy(item.id);try{await remove({path:item.storagePath});const r=await client.models.Submission.update({id:item.id,status:'rejected',processingError:'Rejected by administrator'},{authMode:'userPool'});if(r.errors?.length)throw new Error(r.errors[0].message);await logAction('reject','Submission',item.id,'Rejected '+item.originalName);setMessage('Submission rejected.');await load()}catch(e){setMessage(e instanceof Error?e.message:'Reject failed.')}finally{setBusy('')}}
+ async function trashDoc(item:Document){if(item.status==='trashed')return;if(!window.confirm('Move '+item.originalName+' to Trash?'))return;setBusy(item.id);try{const trash='trash/'+item.id+'.pdf';await copy({source:{path:item.storagePath},destination:{path:trash}});await remove({path:item.storagePath});const r=await client.models.Document.update({id:item.id,status:'trashed',storagePath:trash,trashedAt:new Date().toISOString(),trashedFromPath:item.storagePath},{authMode:'userPool'});if(r.errors?.length)throw new Error(r.errors[0].message);await logAction('trash','Document',item.id,'Moved '+item.originalName+' to Trash');setMessage('Moved to Trash.');setUndoDoc(item);window.setTimeout(()=>setUndoDoc(null),5000);await load()}catch(e){setMessage(e instanceof Error?e.message:'Trash failed.')}finally{setBusy('')}}
+ async function restoreDoc(item:Document){setBusy(item.id);try{const restorePath=item.trashedFromPath||'public/'+item.id+(item.currentVersion&&item.currentVersion>1?'-v'+item.currentVersion:'')+'.pdf';await copy({source:{path:item.storagePath},destination:{path:restorePath}});await remove({path:item.storagePath});const r=await client.models.Document.update({id:item.id,status:'published',storagePath:restorePath,trashedAt:null,trashedFromPath:null},{authMode:'userPool'});if(r.errors?.length)throw new Error(r.errors[0].message);await logAction('restore','Document',item.id,'Restored '+item.originalName);setMessage('Restored.');await load()}catch(e){setMessage(e instanceof Error?e.message:'Restore failed.')}finally{setBusy('')}}
+ async function permanentDelete(item:Document){if(!window.confirm('Permanently delete '+item.originalName+'? This cannot be undone.'))return;setBusy(item.id);try{await remove({path:item.storagePath});const versions=await client.models.DocumentVersion.list({authMode:'userPool'});for(const v of versions.data.filter(x=>x.documentId===item.id)){await remove({path:v.storagePath}).catch(()=>undefined);await client.models.DocumentVersion.delete({id:v.id},{authMode:'userPool'})};const r=await client.models.Document.delete({id:item.id},{authMode:'userPool'});if(r.errors?.length)throw new Error(r.errors[0].message);await logAction('permanent_delete','Document',item.id,'Permanently deleted '+item.originalName);setMessage('Permanently deleted.');await load()}catch(e){setMessage(e instanceof Error?e.message:'Permanent deletion failed.')}finally{setBusy('')}}
+ async function bulkTrash(){if(!selectedIds.length||!window.confirm('Move the selected PDFs to Trash?'))return;for(const id of selectedIds){const d=docs.find(x=>x.id===id);if(d&&d.status!=='trashed')await trashDocSilent(d)}setSelectedIds([]);await load()}
+ async function trashDocSilent(item:Document){try{const trash='trash/'+item.id+'.pdf';await copy({source:{path:item.storagePath},destination:{path:trash}});await remove({path:item.storagePath});await client.models.Document.update({id:item.id,status:'trashed',storagePath:trash,trashedAt:new Date().toISOString(),trashedFromPath:item.storagePath},{authMode:'userPool'});await logAction('trash','Document',item.id,'Bulk moved '+item.originalName)}catch{}}
+ async function approveSelected(){for(const id of selectedIds){const s=pending.find(x=>x.id===id);if(s&&s.status==='pending')await approve(s)}setSelectedIds([])}
+ async function addSection(){if(!name.trim())return;if(editingSection){const r=await client.models.Section.update({id:editingSection.id,name:name.trim(),description:description.trim(),parentId:parentId||undefined},{authMode:'userPool'});if(r.errors?.length){setMessage(r.errors[0].message);return}await logAction('section_update','Section',editingSection.id,'Updated section '+name.trim());setEditingSection(null);setName('');setDescription('');setParentId('');setMessage('Section updated.');await load();return}const r=await client.models.Section.create({name:name.trim(),description:description.trim(),sortOrder:sections.filter(s=>s.parentId===parentId||(!s.parentId&&!parentId)).length+1,parentId:parentId||undefined},{authMode:'userPool'});if(r.errors?.length){setMessage(r.errors[0].message);return}await logAction('section_create','Section',r.data?.id,'Created section '+name.trim());setName('');setDescription('');setParentId('');await load()}
+ function sectionDepth(id:string,parentOverride?:string){let depth=1,current=parentOverride||sectionMap.get(id)?.parentId||null;const seen=new Set<string>();while(current&&!seen.has(current)){seen.add(current);depth++;current=sectionMap.get(current)?.parentId||null}return depth}
+async function moveSection(s:Section,dir:-1|1){const siblings=sections.filter(x=>(x.parentId||'')===(s.parentId||'')).sort((a,b)=>(a.sortOrder??0)-(b.sortOrder??0));const i=siblings.findIndex(x=>x.id===s.id),j=i+dir;if(i<0||j<0||j>=siblings.length)return;const other=siblings[j];await client.models.Section.update({id:s.id,sortOrder:other.sortOrder},{authMode:'userPool'});await client.models.Section.update({id:other.id,sortOrder:s.sortOrder},{authMode:'userPool'});await logAction('section_reorder','Section',s.id,'Reordered '+s.name);await load()}
+ async function confirmDeleteSection(){const s=deleteSection;if(!s)return;const affected=docs.filter(d=>d.sectionId===s.id);if(affected.length&&!deleteDestination){setMessage('Choose where affected PDFs should move.');return}try{for(const d of affected)await client.models.Document.update({id:d.id,sectionId:deleteDestination},{authMode:'userPool'});for(const child of sections.filter(x=>x.parentId===s.id))await client.models.Section.update({id:child.id,parentId:s.parentId||undefined},{authMode:'userPool'});await client.models.Section.delete({id:s.id},{authMode:'userPool'});await logAction('section_delete','Section',s.id,'Deleted '+s.name,{movedDocuments:affected.length,destination:deleteDestination||null});setDeleteSection(null);setDeleteDestination('');setMessage('Section deleted.');await load()}catch(e){setMessage(e instanceof Error?e.message:'Section deletion failed.')}}
+ async function replaceDoc(item:Document,file:File){setBusy(item.id);try{if(file.type!=='application/pdf'&&!file.name.toLowerCase().endsWith('.pdf'))throw new Error('PDF files only.');if(file.size>MAX)throw new Error('Maximum file size is 50 MB.');const h=await hashFile(file),m=await metaFile(file);if(docs.some(d=>d.id!==item.id&&d.fileHash===h))throw new Error('This replacement is already published.');const versions=await client.models.DocumentVersion.list({authMode:'userPool'});const current=Math.max(item.currentVersion||1,...versions.data.filter(v=>v.documentId===item.id).map(v=>v.versionNumber||0));const archivePath='archive/'+item.id+'-v'+current+'.pdf';await copy({source:{path:item.storagePath},destination:{path:archivePath}});const history=await client.models.DocumentVersion.create({documentId:item.id,versionNumber:current,originalName:item.originalName,storagePath:archivePath,size:item.size,pageCount:item.pageCount,title:item.title,author:item.author,fileHash:item.fileHash,createdBy:'admin'},{authMode:'userPool'});if(history.errors?.length)throw new Error(history.errors[0].message);const newPath='public/'+item.id+'-v'+(current+1)+'.pdf';await uploadData({path:newPath,data:file,options:{contentType:'application/pdf'}}).result;const updated=await client.models.Document.update({id:item.id,storagePath:newPath,size:file.size,originalName:file.name.slice(0,180),pageCount:m.pages,title:m.title,author:m.author,fileHash:h,processingStatus:'complete',currentVersion:current+1,publishedAt:new Date().toISOString(),status:'published'},{authMode:'userPool'});if(updated.errors?.length)throw new Error(updated.errors[0].message);await remove({path:item.storagePath});await logAction('replace','Document',item.id,'Replaced '+item.originalName,{version:current+1});setMessage('PDF replaced.');await load()}catch(e){setMessage(e instanceof Error?e.message:'Replacement failed.')}finally{setBusy('')}}
+ async function resolveReport(r:Report){const next=(r.status??'open')==='open'?'resolved':'open';await client.models.Report.update({id:r.id,status:next,reviewedAt:next==='resolved'?new Date().toISOString():null,reviewedBy:'admin'},{authMode:'userPool'});await logAction('report_'+next,'Report',r.id,'Marked report '+next);await load()}
+
+ if(allowed===null)return <div className={styles.shell+' '+styles.center}><span>Checking administrator access…</span></div>;
+ if(!allowed)return <div className={styles.shell+' '+styles.center}><div className={styles.panel}><h2>Admin access required</h2><p className={styles.muted}>Your account is not in the ADMINS group.</p><Link className={styles.primary} href="/">Return to site</Link></div></div>;
+
+ return <div className={styles.shell}>
+  <nav className={styles.nav}><div><div className={styles.brand}><span className={styles.mark}>✦</span>PaperDROPL <span className={styles.dim}>/ Admin</span></div><div className={styles.subbrand}>Library control center</div></div><div className={styles.actions}><Link className={styles.navLink} href="/">Public site</Link><button className={styles.iconButton} onClick={()=>setShortcutHelp(true)} title="Keyboard shortcuts">⌨</button><button className={styles.secondary} onClick={signOut}>Sign out</button></div></nav>
+  <main className={styles.adminPanel}>
+   <div className={styles.heroRow}><div><span className={styles.kicker}>CONTROL ROOM</span><h1>Keep the library clean, useful, and moving.</h1><p className={styles.muted}>Review submissions, publish responsibly, and manage every PDF lifecycle state from one dark dashboard.</p></div><div className={styles.notice}>{attentionCount}<span>items need attention</span></div></div>
+   <div className={styles.overviewGrid}><Overview title="Published" value={docs.filter(d=>(d.status??'published')==='published').length} /><Overview title="Pending" value={pending.filter(x=>x.status==='pending').length} /><Overview title="Sections" value={sections.length} /><Overview title="Reports" value={reportFiltered.length} /></div>
+   {message&&<div className={styles.message}>{message}{undoDoc&&<button type="button" className={styles.secondary} onClick={()=>{setUndoDoc(null);void restoreDoc(undoDoc)}}>Undo</button>}</div>}
+   <section className={styles.panel}><div className={styles.panelHead}><div><span className={styles.kicker}>QUICK PUBLISH</span><h2>Upload & publish</h2><p className={styles.muted}>Drag multiple PDFs here or choose them. Each file gets its own progress, section, and retry state.</p></div><select className={styles.field} value={queueSection} onChange={e=>setQueueSection(e.target.value)}><option value="">Default section</option>{sections.map(s=><option value={s.id} key={s.id}>{s.name}</option>)}</select></div><div className={styles.dropzone+(drag?' '+styles.dragging:'')} onDragEnter={e=>{e.preventDefault();setDrag(true)}} onDragOver={e=>{e.preventDefault();setDrag(true)}} onDragLeave={e=>{e.preventDefault();setDrag(false)}} onDrop={e=>{e.preventDefault();setDrag(false);qadd(e.dataTransfer.files)}} onClick={()=>document.getElementById('admin-queue-file')?.click()}><input id="admin-queue-file" hidden type="file" multiple accept="application/pdf,.pdf" onChange={e=>{if(e.target.files)qadd(e.target.files);e.currentTarget.value=''}}/><strong>Drop PDFs here</strong><span>or tap to choose · 50 MB max each</span></div>{queue.length>0&&<div className={styles.queue}>{queue.map(item=><div className={styles.queueItem} key={item.id}><div className={styles.pdfBadge}>PDF</div><div className={styles.queueCopy}><b>{item.file.name}</b><span>{size(item.file.size)} · {item.status==='uploading'?item.progress+'%':item.status}</span></div><select className={styles.compactField} disabled={busy==='queue'||item.status==='done'} value={item.sectionId} onChange={e=>qpatch(item.id,{sectionId:e.target.value})}>{sections.map(s=><option key={s.id} value={s.id}>{s.name}</option>)}</select>{item.status==='uploading'&&<div className={styles.progress}><i style={{width:item.progress+'%'}}/></div>}{item.error&&<small className={styles.dangerText}>{item.error}</small>}<div className={styles.queueActions}>{item.status==='error'&&<button className={styles.textButton} onClick={()=>qpatch(item.id,{status:'queued',error:undefined})}>Retry</button>}{item.status!=='done'&&<button className={styles.textButton} disabled={busy==='queue'} onClick={()=>setQueue(q=>q.filter(x=>x.id!==item.id))}>Remove</button>}{item.status==='done'&&<span className={styles.successText}>✓ Done</span>}</div></div>)}</div>}<div className={styles.panelFoot}><span>{queue.filter(x=>x.status==='done').length} complete · {queue.filter(x=>x.status!=='done').length} remaining</span><button className={styles.primary} disabled={busy==='queue'||!queue.some(x=>x.status==='queued'||x.status==='error')} onClick={()=>void publishQueue()}>{busy==='queue'?'Publishing…':'Publish all'}</button></div></section>
+
+   <section className={styles.panel}><div className={styles.panelHead}><div><span className={styles.kicker}>REVIEW QUEUE</span><h2>Pending submissions <span className={styles.count}>{pendingFiltered.length}</span></h2><p className={styles.muted}>Preview the actual pending PDF, then approve or reject it.</p></div>{selectedIds.length>0&&<div className={styles.bulkBar}><b>{selectedIds.length} selected</b><button className={styles.okButton} onClick={()=>void approveSelected()}>Approve</button><button className={styles.dangerButton} onClick={()=>{for(const id of selectedIds){const s=pending.find(x=>x.id===id);if(s)void reject(s)}setSelectedIds([])}}>Reject</button></div>}</div><div className={styles.statusTabs}>{[['all','All'],['pending','Pending'],['approved','Approved'],['rejected','Rejected']].map(([v,l])=><button type="button" key={v} className={submissionFilter===v?styles.tabActive:styles.tab} onClick={()=>setSubmissionFilter(v)}>{l}</button>)}</div><div className={styles.filters}><input ref={searchRef} className={styles.field} value={query} onChange={e=>setQuery(e.target.value)} placeholder="Search PDFs, sections, reports…" /><select className={styles.field} value={sectionFilter} onChange={e=>setSectionFilter(e.target.value)}><option value="all">All sections</option>{sections.map(s=><option key={s.id} value={s.id}>{s.name}</option>)}</select><select className={styles.field} value={sort} onChange={e=>setSort(e.target.value)}><option value="newest">Newest</option><option value="az">A–Z</option><option value="size">Largest</option></select></div>{pendingFiltered.length?<div className={styles.cardGrid}>{pendingFiltered.map(item=><SubmissionCard key={item.id} item={item} section={sectionMap.get(item.sectionId)} checked={selectedIds.includes(item.id)} busy={busy} onToggle={()=>setSelectedIds(v=>v.includes(item.id)?v.filter(x=>x!==item.id):[...v,item.id])} onOpen={()=>openDetail(item)} onApprove={()=>void approve(item)} onReject={()=>void reject(item)}/>)}</div>:<Empty text="No pending submissions."/ >}</section>
+
+   <section className={styles.panel}><div className={styles.panelHead}><div><span className={styles.kicker}>LIBRARY</span><h2>Published & Trash <span className={styles.count}>{publishedDocs.length}</span></h2><p className={styles.muted}>Move to Trash instead of immediate deletion. Restore or permanently delete from there.</p></div><div className={styles.bulkBar}>{selectedIds.length>0&&<><b>{selectedIds.length} selected</b><button className={styles.dangerButton} onClick={()=>void bulkTrash()}>Trash selected</button><button className={styles.textButton} onClick={()=>setSelectedIds([])}>Clear</button></>}</div></div><div className={styles.statusTabs}>{[['attention','Active + Trash'],['published','Published'],['trash','Trash']].map(([v,l])=><button key={v} className={statusFilter===v?styles.tabActive:styles.tab} onClick={()=>setStatusFilter(v)}>{l}</button>)}</div>{publishedDocs.length?<div className={styles.cardGrid}>{publishedDocs.map(doc=><DocumentCard key={doc.id} doc={doc} section={sectionMap.get(doc.sectionId)} checked={selectedIds.includes(doc.id)} busy={busy} onToggle={()=>setSelectedIds(v=>v.includes(doc.id)?v.filter(x=>x!==doc.id):[...v,doc.id])} onOpen={()=>openDetail(doc)} onTrash={()=>void trashDoc(doc)} onRestore={()=>void restoreDoc(doc)} onPermanent={()=>void permanentDelete(doc)} onReplace={()=>{setReplaceTarget(doc);setDetail(doc);replaceInput.current?.click()}}/>)}</div>:<Empty text="No documents match the current filters."/ >}</section>
+   <input ref={replaceInput} hidden type="file" accept="application/pdf,.pdf" onChange={e=>{const f=e.target.files?.[0];if(f&&replaceTarget)void replaceDoc(replaceTarget,f);setReplaceTarget(null);e.currentTarget.value=''}}/>
+
+   <section className={styles.twoCol}><section className={styles.panel}><div className={styles.panelHead}><div><span className={styles.kicker}>SECTIONS</span><h2>Section manager</h2><p className={styles.muted}>Nested sections are supported up to a practical three-level hierarchy.</p></div></div><div className={styles.sectionForm}><input className={styles.field} value={name} onChange={e=>setName(e.target.value)} placeholder="Section name" /><input className={styles.field} value={description} onChange={e=>setDescription(e.target.value)} placeholder="Description" /><select className={styles.field} value={parentId} onChange={e=>setParentId(e.target.value)}><option value="">Top-level</option>{sections.map(s=><option key={s.id} value={s.id}>Child of {s.name}</option>)}</select><button className={styles.primary} disabled={!name.trim()} onClick={()=>void addSection()}>{editingSection?'Save changes':'Add section'}</button>{editingSection&&<button className={styles.secondary} onClick={()=>{setEditingSection(null);setName('');setDescription('');setParentId('')}}>Cancel</button></div><div className={styles.sectionTree}>{sections.map(s=><div className={styles.sectionRow} key={s.id}><div className={styles.treeIndent} style={{marginLeft:Math.min(36,(s.parentId?1:0)*18)}}><b>{s.name}</b><span>{docCount.get(s.id)||0} PDFs · {childCount.get(s.id)||0} children</span></div><div className={styles.actions}><button className={styles.iconButton} onClick={()=>void moveSection(s,-1)} title="Move up">↑</button><button className={styles.iconButton} onClick={()=>void moveSection(s,1)} title="Move down">↓</button><button className={styles.textButton} onClick={()=>{setEditingSection(s);setName(s.name);setDescription(s.description||'');setParentId(s.parentId||'')}}>Use</button><button className={styles.dangerLink} onClick={()=>{setDeleteSection(s);setDeleteDestination(s.parentId||'')}}>Delete</button></div></div>)}</div></section>
+   <section className={styles.panel}><div className={styles.panelHead}><div><span className={styles.kicker}>REPORTS</span><h2>Problem PDFs <span className={styles.count}>{reportFiltered.length}</span></h2><p className={styles.muted}>User reports land here without exposing private submission files.</p></div></div>{reportFiltered.length?reportFiltered.map(r=><div className={styles.reportRow} key={r.id}><div><b>{docs.find(d=>d.id===r.documentId)?.originalName||'Unknown PDF'}</b><span>{r.reason} · {date(r.createdAt)}</span><p>{r.description||'No details.'}</p></div><button className={styles.secondary} onClick={()=>void resolveReport(r)}>Resolve</button></div>):<Empty text="No open reports."/>}</section></section>
+
+   <section className={styles.panel}><div className={styles.panelHead}><div><span className={styles.kicker}>ACTIVITY</span><h2>Recent admin activity</h2></div></div>{activity.length?activity.slice(0,18).map(a=><div className={styles.activityRow} key={a.id}><span className={styles.activityDot}/><div><b>{a.summary}</b><span>{a.action} · {date(a.createdAt)}</span></div></div>):<Empty text="No activity yet."/>}</section>
+  </main>
+  {detail&&<div className={styles.drawerBackdrop} onMouseDown={e=>{if(e.currentTarget===e.target)setDetail(null)}}><aside className={styles.drawer}><button className={styles.drawerClose} onClick={()=>setDetail(null)}>×</button><span className={styles.kicker}>{'status' in detail?(detail.status||'pending').toUpperCase():'DOCUMENT'}</span><h2>{detail.originalName}</h2><div className={styles.previewBox}>{detailUrl?<button className={styles.previewButton} onClick={()=>window.open(detailUrl,'_blank','noopener,noreferrer')}>Open PDF preview ↗</button>:<span>Loading preview…</span>}</div><div className={styles.detailGrid}><div><span>Section</span><b>{sectionMap.get(detail.sectionId)?.name||'Unknown'}</b></div><div><span>Size</span><b>{size(detail.size)}</b></div><div><span>Pages</span><b>{'pageCount' in detail&&detail.pageCount||'—'}</b></div><div><span>Updated</span><b>{date(detail.updatedAt||detail.createdAt)}</b></div></div>{'title' in detail&&detail.title&&<p><b>Title:</b> {detail.title}</p>}{'author' in detail&&detail.author&&<p><b>Author:</b> {detail.author}</p>}<div className={styles.drawerActions}>{'status' in detail&&detail.status==='pending'&&<><button className={styles.okButton} disabled={!!busy} onClick={()=>void approve(detail as Submission)}>Approve</button><button className={styles.dangerButton} disabled={!!busy} onClick={()=>void reject(detail as Submission)}>Reject</button></>}{'status' in detail&&(detail.status??'published')==='published'&&<><button className={styles.dangerButton} disabled={!!busy} onClick={()=>void trashDoc(detail as Document)}>Trash</button><button className={styles.secondary} onClick={()=>{setReplaceTarget(detail as Document);replaceInput.current?.click()}}>Replace PDF</button></>}{'status' in detail&&detail.status==='trashed'&&<><button className={styles.okButton} disabled={!!busy} onClick={()=>void restoreDoc(detail as Document)}>Restore</button><button className={styles.dangerButton} disabled={!!busy} onClick={()=>void permanentDelete(detail as Document)}>Permanently delete</button></>}</div></aside></div>}
+  {deleteSection&&<div className={styles.modalBackdrop}><div className={styles.confirmModal}><h2>Delete {deleteSection.name}?</h2><p>This affects {docCount.get(deleteSection.id)||0} PDFs and {childCount.get(deleteSection.id)||0} child sections. Choose where PDFs should go before deletion.</p>{(docCount.get(deleteSection.id)||0)>0&&<select className={styles.field} value={deleteDestination} onChange={e=>setDeleteDestination(e.target.value)}><option value="">Choose destination</option>{sections.filter(s=>s.id!==deleteSection.id).map(s=><option key={s.id} value={s.id}>{s.name}</option>)}</select>}<div className={styles.drawerActions}><button className={styles.secondary} onClick={()=>setDeleteSection(null)}>Cancel</button><button className={styles.dangerButton} onClick={()=>void confirmDeleteSection()}>Delete section</button></div></div></div>}
+  {shortcutHelp&&<div className={styles.modalBackdrop}><div className={styles.confirmModal}><h2>Keyboard shortcuts</h2><p><b>Ctrl/Cmd + K</b> focus search</p><p><b>P</b> preview selected detail</p><p><b>Esc</b> close drawers/modals</p><p><b>A</b> and <b>R</b> are reserved for the focused review flow.</p><button className={styles.primary} onClick={()=>setShortcutHelp(false)}>Done</button></div></div>}
+ </div>
 }
-
-function AdminArea() {
-  const { signOut } = useAuthenticator();
-  const [allowed, setAllowed] = useState<boolean | null>(null);
-  const [pending, setPending] = useState<Submission[]>([]);
-  const [docs, setDocs] = useState<Document[]>([]);
-  const [sections, setSections] = useState<Section[]>([]);
-  const [busy, setBusy] = useState('');
-  const [message, setMessage] = useState('');
-  const [name, setName] = useState('');
-  const [description, setDescription] = useState('');
-  const [adminFile, setAdminFile] = useState<File | null>(null);
-  const [adminSection, setAdminSection] = useState('');
-
-  async function load() {
-    const [p, d, s] = await Promise.all([
-      client.models.Submission.list({ authMode: 'userPool' }),
-      client.models.Document.list({ authMode: 'userPool' }),
-      client.models.Section.list({ authMode: 'userPool' }),
-    ]);
-    const firstError = p.errors?.[0]?.message || d.errors?.[0]?.message || s.errors?.[0]?.message;
-    if (firstError) throw new Error(firstError);
-    setPending(p.data.filter(x => x.status === 'pending'));
-    setDocs(d.data);
-    const sorted = [...s.data].sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0));
-    setSections(sorted);
-    if (!adminSection && sorted[0]) setAdminSection(sorted[0].id);
-  }
-
-  useEffect(() => {
-    fetchAuthSession().then(session => {
-      const groups = session.tokens?.accessToken?.payload?.['cognito:groups'];
-      const isAdmin = Array.isArray(groups) && groups.includes('ADMINS');
-      setAllowed(isAdmin);
-      if (isAdmin) load().catch(() => setMessage('Could not load admin data.'));
-    }).catch(() => setAllowed(false));
-  }, []);
-
-  async function uploadDirectly() {
-    if (!adminFile) return setMessage('Choose a PDF first.');
-    if (adminFile.type !== 'application/pdf' && !adminFile.name.toLowerCase().endsWith('.pdf')) return setMessage('Only PDF files are accepted.');
-    if (adminFile.size > 50 * 1024 * 1024) return setMessage('Maximum file size is 50 MB.');
-    if (!adminSection) return setMessage('Choose a section.');
-    setBusy('upload'); setMessage('Publishing PDF…');
-    let uploadedPath = '';
-    try {
-      const id = crypto.randomUUID();
-      uploadedPath = `public/${id}.pdf`;
-      await uploadData({ path: uploadedPath, data: adminFile, options: { contentType: 'application/pdf' } }).result;
-      const result = await client.models.Document.create({
-        originalName: adminFile.name.slice(0, 180), storagePath: uploadedPath,
-        size: adminFile.size, sectionId: adminSection,
-      }, { authMode: 'userPool' });
-      if (result.errors?.length) throw new Error(result.errors[0].message);
-      setAdminFile(null); setMessage('PDF published successfully.');
-      const input = document.getElementById('adminFile') as HTMLInputElement | null;
-      if (input) input.value = '';
-      await load();
-    } catch (e) {
-      if (uploadedPath) await remove({ path: uploadedPath }).catch(() => undefined);
-      setMessage(e instanceof Error ? e.message : 'Upload failed.');
-    } finally { setBusy(''); }
-  }
-
-  async function approve(item: Submission) {
-    setBusy(item.id); setMessage('');
-    try {
-      const destination = `public/${item.id}.pdf`;
-      const existingDocs = await client.models.Document.list({ authMode: 'userPool' });
-      const existing = existingDocs.data.find(d => d.storagePath === destination);
-      if (existingDocs.errors?.length) throw new Error(existingDocs.errors[0].message);
-
-      if (!existing) {
-        try {
-          await copy({ source: { path: item.storagePath }, destination: { path: destination } });
-        } catch (copyError) {
-          // A previous approval attempt may already have copied the object.
-          // Re-check the document record before treating this as a hard failure.
-          const retryDocs = await client.models.Document.list({ authMode: 'userPool' });
-          if (retryDocs.errors?.length) throw new Error(retryDocs.errors[0].message);
-          if (!retryDocs.data.some(d => d.storagePath === destination)) throw copyError;
-        }
-
-        try {
-          const created = await client.models.Document.create({
-            originalName: item.originalName, storagePath: destination, size: item.size,
-            sectionId: item.sectionId,
-          }, { authMode: 'userPool' });
-          if (created.errors?.length) throw new Error(created.errors[0].message);
-        } catch (createError) {
-          // Roll back the public object if its database record could not be created.
-          await remove({ path: destination }).catch(() => undefined);
-          throw createError;
-        }
-      }
-
-      // Keep the pending record until the public document exists. This makes
-      // approval retryable if a later cleanup operation temporarily fails.
-      await remove({ path: item.storagePath });
-      const deleted = await client.models.Submission.delete({ id: item.id }, { authMode: 'userPool' });
-      if (deleted.errors?.length) throw new Error(deleted.errors[0].message);
-      setMessage('Published successfully.'); await load();
-    } catch (e) { setMessage(e instanceof Error ? e.message : 'Approval failed.'); }
-    finally { setBusy(''); }
-  }
-
-  async function reject(item: Submission) {
-    if (!confirm(`Reject and delete ${item.originalName}?`)) return;
-    setBusy(item.id); setMessage('');
-    try {
-      await remove({ path: item.storagePath });
-      await client.models.Submission.delete({ id: item.id }, { authMode: 'userPool' });
-      setMessage('Submission rejected.'); await load();
-    } catch (e) { setMessage(e instanceof Error ? e.message : 'Reject failed.'); }
-    finally { setBusy(''); }
-  }
-
-  async function deleteDoc(item: Document) {
-    if (!confirm(`Delete ${item.originalName} permanently?`)) return;
-    setBusy(item.id); setMessage('');
-    try {
-      await remove({ path: item.storagePath });
-      await client.models.Document.delete({ id: item.id }, { authMode: 'userPool' });
-      setMessage('Published PDF deleted.'); await load();
-    } catch (e) { setMessage(e instanceof Error ? e.message : 'Delete failed.'); }
-    finally { setBusy(''); }
-  }
-
-  async function addSection() {
-    if (!name.trim()) return;
-    setBusy('section');
-    try {
-      const result = await client.models.Section.create({
-        name: name.trim(), description: description.trim(), sortOrder: sections.length + 1,
-      }, { authMode: 'userPool' });
-      if (result.errors?.length) throw new Error(result.errors[0].message);
-      setName(''); setDescription(''); setMessage('Section added.'); await load();
-    } catch (e) { setMessage(e instanceof Error ? e.message : 'Could not add section.'); }
-    finally { setBusy(''); }
-  }
-
-  async function initializeSections() {
-    setBusy('init');
-    try {
-      const defaults = [
-        ['Graphics', 'Graphics and visual design resources'],
-        ['Section 2', 'Add your PDFs here'], ['Section 3', 'Add your PDFs here'],
-        ['Section 4', 'Add your PDFs here'], ['Section 5', 'Add your PDFs here'],
-      ];
-      for (let i = 0; i < defaults.length; i++) {
-        await client.models.Section.create({ name: defaults[i][0], description: defaults[i][1], sortOrder: i + 1 }, { authMode: 'userPool' });
-      }
-      setMessage('Five starter sections created.'); await load();
-    } catch (e) { setMessage(e instanceof Error ? e.message : 'Initialization failed.'); }
-    finally { setBusy(''); }
-  }
-
-  if (allowed === null) return <div className={`${styles.shell} ${styles.center}`}><p>Checking administrator access…</p></div>;
-  if (!allowed) return <div className={`${styles.shell} ${styles.center}`}><div className={styles.panel}><h2>Admin access required</h2><p className={styles.muted}>Your account is not in the ADMINS group.</p><Link className={styles.navLink} href="/">Return to site</Link></div></div>;
-
-  return <div className={styles.shell}>
-    <nav className={styles.nav}><div className={styles.brand}><span className={styles.mark}>↗</span>PaperDrop / Admin</div><div className={styles.actions}><Link className={styles.navLink} href="/">Public site</Link><button className={styles.secondary} onClick={signOut}>Sign out</button></div></nav>
-    <main className={styles.adminPanel}><div className={styles.adminGrid}>
-      <section className={styles.panel}><h2>Upload & publish</h2><p className={styles.muted}>Admin uploads go directly to the public library.</p><div className={styles.sectionForm}><input id="adminFile" className={styles.search} style={{margin:0}} type="file" accept="application/pdf,.pdf" onChange={e => setAdminFile(e.target.files?.[0] ?? null)} /><select className={styles.search} style={{margin:0}} value={adminSection} onChange={e => setAdminSection(e.target.value)}>{sections.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}</select><button className={styles.primary} disabled={busy === 'upload'} onClick={uploadDirectly}>{busy === 'upload' ? 'Publishing…' : 'Publish'}</button></div></section>
-      <section className={styles.panel}><h2>Pending submissions ({pending.length})</h2><p className={styles.muted}>Nothing appears publicly until you approve it.</p>{pending.length ? pending.map(x => <div className={styles.item} key={x.id}><div><b>{x.originalName}</b><div className={styles.muted}>{sectionName(sections, x.sectionId)} · {formatSize(x.size)}</div></div><div className={styles.actions}><button className={`${styles.secondary} ${styles.ok}`} disabled={!!busy} onClick={() => approve(x)}>Approve & publish</button><button className={`${styles.secondary} ${styles.danger}`} disabled={!!busy} onClick={() => reject(x)}>Reject</button></div></div>) : <p className={styles.muted}>No pending submissions.</p>}</section>
-      <section className={styles.panel}><h2>Sections</h2><p className={styles.muted}>The final odd-numbered card is automatically centered on the public site.</p>{sections.length === 0 && <button className={styles.primary} disabled={!!busy} onClick={initializeSections}>Create five starter sections</button>}{sections.map(s => <div className={styles.item} key={s.id}><div><b>{s.name}</b><div className={styles.muted}>{s.description}</div></div><span className={styles.small}>#{s.sortOrder}</span></div>)}<div className={styles.sectionForm} style={{marginTop:15}}><input className={styles.search} style={{margin:0}} value={name} onChange={e=>setName(e.target.value)} placeholder="New section name"/><input className={styles.search} style={{margin:0}} value={description} onChange={e=>setDescription(e.target.value)} placeholder="Description"/><button className={styles.primary} disabled={busy === 'section' || !name.trim()} onClick={addSection}>Add</button></div></section>
-      <section className={styles.panel}><h2>Published PDFs</h2>{docs.length ? docs.map(x => <div className={styles.item} key={x.id}><div><b>{x.originalName}</b><div className={styles.muted}>{sectionName(sections, x.sectionId)} · {formatSize(x.size)}</div></div><div className={styles.actions}><DocumentLink path={x.storagePath}/><button className={`${styles.secondary} ${styles.danger}`} disabled={!!busy} onClick={() => deleteDoc(x)}>Delete</button></div></div>) : <p className={styles.muted}>No published PDFs.</p>}</section>
-      {message && <div className={`${styles.notice} ${styles.success}`}>{message}</div>}
-    </div></main>
-  </div>;
-}
-function sectionName(list: Section[], id: string) { return list.find(s => s.id === id)?.name ?? 'Unknown section'; }
-function formatSize(n: number) { return n < 1048576 ? `${Math.max(1, Math.round(n / 1024))} KB` : `${(n / 1048576).toFixed(1)} MB`; }
-function DocumentLink({path}:{path:string}) { const [url,setUrl]=useState(''); useEffect(()=>{import('aws-amplify/storage').then(({getUrl})=>getUrl({path}).then(r=>setUrl(r.url.toString())).catch(console.error))},[path]); return url ? <a className={styles.download} href={url} target="_blank" rel="noreferrer">View</a> : <span className={styles.small}>…</span>; }
+function Overview({title,value}:{title:string;value:number}){return <div className={styles.overview}><span>{title}</span><b>{value}</b></div>}
+function Empty({text}:{text:string}){return <div className={styles.empty}>{text}</div>}
+function SubmissionCard({item,section,checked,busy,onToggle,onOpen,onApprove,onReject}:{item:Submission;section?:Section;checked:boolean;busy:string;onToggle:()=>void;onOpen:()=>void;onApprove:()=>void;onReject:()=>void}){return <article className={styles.card}><div className={styles.thumb}><div className={styles.pdfBadge}>PDF</div><span>Preview available</span></div><div className={styles.cardBody}><div className={styles.cardTop}><label><input type="checkbox" checked={checked} onChange={onToggle}/></label><span className={item.status==='pending'?styles.statusPending:item.status==='approved'?styles.statusLive:styles.statusTrash}>{(item.status||'unknown').toUpperCase()}</span></div><h3 title={item.originalName}>{item.originalName}</h3><p>{section?.name||'Unknown'} · {size(item.size)} · {item.pageCount||'—'} pages</p><small>{date(item.createdAt)}</small></div><div className={styles.cardActions}><button className={styles.secondary} disabled={!!busy||item.status!=='pending'} onClick={onOpen}>Preview</button><button className={styles.okButton} disabled={!!busy||item.status!=='pending'} onClick={onApprove}>Approve</button><button className={styles.dangerButton} disabled={!!busy||item.status!=='pending'} onClick={onReject}>Reject</button></div></article>}
+function DocumentCard({doc,section,checked,busy,onToggle,onOpen,onTrash,onRestore,onPermanent,onReplace}:{doc:Document;section?:Section;checked:boolean;busy:string;onToggle:()=>void;onOpen:()=>void;onTrash:()=>void;onRestore:()=>void;onPermanent:()=>void;onReplace:()=>void}){const trash=doc.status==='trashed';return <article className={styles.card}><div className={styles.thumb}><div className={styles.pdfBadge}>PDF</div><span>{trash?'In Trash':'Ready'}</span></div><div className={styles.cardBody}><div className={styles.cardTop}><label><input type="checkbox" checked={checked} onChange={onToggle}/></label><span className={trash?styles.statusTrash:styles.statusLive}>{trash?'TRASHED':'PUBLISHED'}</span></div><h3 title={doc.originalName}>{doc.originalName}</h3><p>{section?.name||'Unknown'} · {size(doc.size)} · {doc.pageCount||'—'} pages</p><small>{date(doc.updatedAt||doc.createdAt)} {doc.currentVersion&&doc.currentVersion>1?' · v'+doc.currentVersion:''}</small></div><div className={styles.cardActions}><button className={styles.secondary} onClick={onOpen}>Preview</button>{trash?<><button className={styles.okButton} disabled={!!busy} onClick={onRestore}>Restore</button><button className={styles.dangerButton} disabled={!!busy} onClick={onPermanent}>Delete forever</button></>:<><button className={styles.secondary} disabled={!!busy} onClick={onReplace}>Replace</button><button className={styles.dangerButton} disabled={!!busy} onClick={onTrash}>Trash</button></>}</div></article>}
