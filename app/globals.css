@@ -1545,7 +1545,7 @@ html[data-pd-motion="reduced"] *::after {
 
   background-image:
     linear-gradient(rgba(3, 5, 22, 0.04), rgba(3, 5, 22, 0.12)),
-    url("/anime/backgrounds/paperdrop-nightscape.webp");
+    url("/anime/backgrounds/PAPERDROP-main-background.webp");
 
   background-repeat: no-repeat;
   background-position: center top;
@@ -1968,7 +1968,7 @@ html[data-pd-motion="reduced"] *::after {
   z-index: 0;
   pointer-events: none;
 
-  background-image: url("/anime/backgrounds/paperdrop-nightscape.webp");
+  background-image: url("/anime/backgrounds/PAPERDROP-main-background.webp");
   background-repeat: no-repeat;
   background-position: center top;
   background-size: cover;
@@ -2253,7 +2253,7 @@ html[data-pd-motion="reduced"] *::after {
 /* FINAL NIGHTSCAPE FIX — direct page background */
 .pd-page {
   background-color: #030516 !important;
-  background-image: url("/anime/backgrounds/paperdrop-nightscape.webp") !important;
+  background-image: url("/anime/backgrounds/PAPERDROP-main-background.webp") !important;
   background-repeat: no-repeat !important;
   background-position: center top !important;
   background-size: cover !important;

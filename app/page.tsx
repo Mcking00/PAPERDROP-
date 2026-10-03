@@ -272,7 +272,7 @@ export default function Home() {
     <main
       className={`pd-page ${settings.meteors ? "pd-meteors" : ""} ${settings.comments ? "pd-comments" : ""}`}
     >
-      <img className="pd-nightscape" src="/anime/backgrounds/paperdrop-nightscape.webp" alt="" aria-hidden="true" />
+      <img className="pd-nightscape" src="/anime/backgrounds/PAPERDROP-main-background.webp" alt="" aria-hidden="true" />
       <AnimatedSky meteors={settings.meteors} />
       <header className="pd-nav">
         <Link href="#top" className="pd-logo">
