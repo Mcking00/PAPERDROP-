@@ -22,7 +22,7 @@ async function metaFile(file:File){const text=new TextDecoder('latin1').decode(n
 function AdminArea(){
  const {signOut}=useAuthenticator();
  const [allowed,setAllowed]=useState<boolean|null>(null),[pending,setPending]=useState<Submission[]>([]),[docs,setDocs]=useState<Document[]>([]),[sections,setSections]=useState<Section[]>([]),[reports,setReports]=useState<Report[]>([]),[activity,setActivity]=useState<Activity[]>([]);
- const [busy,setBusy]=useState(''),[message,setMessage]=useState(''),[query,setQuery]=useState(''),[statusFilter,setStatusFilter]=useState('attention'),[sectionFilter,setSectionFilter]=useState('all'),[sort,setSort]=useState('newest');
+ const [busy,setBusy]=useState(''),[message,setMessage]=useState(''),[query,setQuery]=useState(''),[statusFilter,setStatusFilter]=useState('attention'),[submissionFilter,setSubmissionFilter]=useState('pending'),[sectionFilter,setSectionFilter]=useState('all'),[sort,setSort]=useState('newest');
  const [selectedIds,setSelectedIds]=useState<string[]>([]),[detail,setDetail]=useState<Document|Submission|null>(null),[detailUrl,setDetailUrl]=useState(''),[shortcutHelp,setShortcutHelp]=useState(false),[replaceTarget,setReplaceTarget]=useState<Document|null>(null);
  const [name,setName]=useState(''),[description,setDescription]=useState(''),[parentId,setParentId]=useState(''),[editingSection,setEditingSection]=useState<Section|null>(null),[deleteSection,setDeleteSection]=useState<Section|null>(null),[deleteDestination,setDeleteDestination]=useState('');
  const [queue,setQueue]=useState<QItem[]>([]),[drag,setDrag]=useState(false),[queueSection,setQueueSection]=useState('');
