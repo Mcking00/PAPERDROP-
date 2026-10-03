@@ -777,3 +777,6 @@ function formatSize(n: number) {
     ? `${Math.max(1, Math.round(n / 1024))} KB`
     : `${(n / 1048576).toFixed(1)} MB`;
 }
+
+
+function UpgradeMarker(){return <span aria-hidden="true"/>}
