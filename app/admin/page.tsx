@@ -17,9 +17,7 @@ function size(n?:number|null){const x=Number(n??0);if(!x)return '—';if(x<1024)
 function date(v?:string|null){if(!v)return '—';const d=new Date(v);return Number.isNaN(d.getTime())?'—':new Intl.DateTimeFormat('en-IN',{day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'}).format(d)}
 function norm(v:unknown){return String(v??'').toLowerCase().trim()}
 async function hashFile(file:File){const b=await crypto.subtle.digest('SHA-256',await file.arrayBuffer());return Array.from(new Uint8Array(b)).map(x=>x.toString(16).padStart(2,'0')).join('')}
-async function metaFile(file:File){const text=new TextDecoder('latin1').decode(new Uint8Array(await file.arrayBuffer()).subarray(0,Math.min(file.size,8*1024*1024)));const pages=(text.match(/\\/Type\\s*\\/Page(?:\\s|[>\/])/g)||[]).length||undefined;const read=(k:string)=>{const m=text.match(new RegExp('/'+k+'\\\\s*\\\\(([^)]{1,260})\\\\)','i'));return m?.[1]?.replace(/\\\\([\\\\()])/g,'$1').trim()||undefined};return{pages,title:read('Title'),author:read('Author')}}
-
-export default function AdminPage(){return <Authenticator hideSignUp><AdminArea/></Authenticator>}
+async function metaFile(file:File){const text=new TextDecoder('latin1').decode(new Uint8Array(await file.arrayBuffer()).subarray(0,Math.min(file.size,8*1024*1024)));const pages=(text.match(/\/Type\s*\/Page(?:\s|[>\/])/g)||[]).length||undefined;const read=(k:string)=>{const m=text.match(new RegExp('/'+k+'\\s*\\(([^)]{1,260})\\)','i'));return m?.[1]?.replace(/\\([\\()])/g,'$1').trim()||undefined};return{pages,title:read('Title'),author:read('Author')}}\n\nexport default function AdminPage(){return <Authenticator hideSignUp><AdminArea/></Authenticator>}
 
 function AdminArea(){
  const {signOut}=useAuthenticator();
