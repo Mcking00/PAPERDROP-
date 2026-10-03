@@ -160,7 +160,7 @@ export default function Home() {
           : sorted[0]?.id || "",
       );
     } catch (error) {
-      console.error("PaperDrop data loading failed:", error);
+      console.error("PaperDROPL data loading failed:", error);
       setLibraryError(
         error instanceof Error
           ? error.message
