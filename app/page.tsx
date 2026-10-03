@@ -272,7 +272,6 @@ export default function Home() {
     <main
       className={`pd-page ${settings.meteors ? "pd-meteors" : ""} ${settings.comments ? "pd-comments" : ""}`}
     >
-      <img className="pd-nightscape" src="/anime/backgrounds/PAPERDROP-main-background.webp" alt="" aria-hidden="true" />
       <AnimatedSky meteors={settings.meteors} />
       <header className="pd-nav">
         <Link href="#top" className="pd-logo">
@@ -335,12 +334,6 @@ export default function Home() {
       </header>
 
       <section id="top" className="pd-hero">
-        <div className="pd-scenery">
-          <img className="pd-moon" src="/anime/backgrounds/moon.svg" />
-          <img className="pd-cloud" src="/anime/backgrounds/cloud.svg" />
-          <img className="pd-city" src="/anime/backgrounds/city.svg" />
-          <img className="pd-torii" src="/anime/backgrounds/torii.svg" />
-        </div>
         <Character
           className="pd-hero-girl"
           src="/anime/characters/hero-girl.webp"
