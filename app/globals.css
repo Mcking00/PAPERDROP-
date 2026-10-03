@@ -1523,8 +1523,10 @@ html[data-pd-motion="reduced"] *::after {
 }
 
 /* =========================================================
-   PAPERDROPL — FIXED ILLUSTRATED BACKGROUND
+   PAPERDROPL — SINGLE BACKGROUND LAYER
    The supplied nightscape is the base artwork.
+   Moon, torii, city, mountains, lake and large stars are already
+   part of this image, so no duplicate scenery is rendered.
    ========================================================= */
 
 .pd-page {
@@ -1532,68 +1534,39 @@ html[data-pd-motion="reduced"] *::after {
   isolation: isolate !important;
   min-height: 100vh;
   overflow-x: hidden;
-  background: #030516 !important;
+
+  /* The supplied illustration is the single base background. */
+  background-color: #030516 !important;
+  background-image: url("/anime/backgrounds/PAPERDROP-main-background.webp") !important;
+  background-repeat: no-repeat !important;
+  background-position: center top !important;
+  background-size: cover !important;
+  background-attachment: fixed !important;
 }
 
-/* The supplied 1024x1536 nightscape sits behind the real UI. */
-.pd-page::before {
-  content: "";
-  position: fixed;
-  inset: 0;
-  z-index: 0;
-  pointer-events: none;
-
-  background-image:
-    linear-gradient(rgba(3, 5, 22, 0.04), rgba(3, 5, 22, 0.12)),
-    url("/anime/backgrounds/PAPERDROP-main-background.webp");
-
-  background-repeat: no-repeat;
-  background-position: center top;
-  background-size: cover;
+/* UI sections stay transparent so the illustration remains visible. */
+.pd-hero,
+.pd-stats,
+.pd-section,
+.pd-guide,
+.pd-features {
+  background: transparent !important;
 }
 
-/* A subtle readability veil, without destroying the artwork. */
-.pd-page::after {
-  content: "";
-  position: fixed;
-  inset: 0;
-  z-index: 1;
-  pointer-events: none;
-
+/* Cards remain solid enough for readability. */
+.pd-subject-card {
   background: linear-gradient(
     180deg,
-    rgba(2, 4, 18, 0.08) 0%,
-    transparent 28%,
-    rgba(2, 4, 18, 0.04) 60%,
-    rgba(2, 4, 18, 0.24) 100%
-  );
-}
-
-/* Every real website element is above the illustration. */
-.pd-page > * {
-  position: relative;
-  z-index: 5;
+    rgba(11, 17, 47, 0.82),
+    rgba(4, 9, 28, 0.78)
+  ) !important;
 }
 
 /* =========================================================
-   REMOVE THE OLD BACKGROUND ART
-   The supplied image already contains moon, shrine,
-   torii, city, lake, clouds, mountains and large stars.
+   ANIMATED SKY OVERLAY
+   Only the intentional tiny stars and meteors remain.
    ========================================================= */
 
-.pd-scenery {
-  display: none !important;
-}
-
-.pd-sky-layer > img:first-child {
-  display: none !important;
-}
-
-.pd-sky-moon {
-  display: none !important;
-}
-
-/* Keep the sky layer only for animated overlays. */
 .pd-sky-layer {
   position: fixed !important;
   inset: 0 !important;
@@ -1602,10 +1575,7 @@ html[data-pd-motion="reduced"] *::after {
   overflow: hidden !important;
 }
 
-/* =========================================================
-   MANY SMALL TWINKLING STARS
-   ========================================================= */
-
+/* Many small twinkling stars. */
 .pd-sky-layer::before,
 .pd-sky-layer::after {
   content: "";
@@ -1617,27 +1587,16 @@ html[data-pd-motion="reduced"] *::after {
 .pd-sky-layer::before {
   background-image:
     radial-gradient(circle, rgba(255, 255, 255, 0.95) 0 1px, transparent 1.7px),
-    radial-gradient(
-      circle,
-      rgba(170, 200, 255, 0.8) 0 0.8px,
-      transparent 1.5px
-    ),
-    radial-gradient(
-      circle,
-      rgba(255, 190, 240, 0.85) 0 0.7px,
-      transparent 1.4px
-    );
-
+    radial-gradient(circle, rgba(170, 200, 255, 0.8) 0 0.8px, transparent 1.5px),
+    radial-gradient(circle, rgba(255, 190, 240, 0.85) 0 0.7px, transparent 1.4px);
   background-size:
     71px 89px,
     113px 127px,
     167px 149px;
-
   background-position:
     13px 31px,
     47px 83px,
     97px 17px;
-
   opacity: 0.48;
   animation: pdTinyStarsA 4.8s ease-in-out infinite alternate;
 }
@@ -1646,41 +1605,28 @@ html[data-pd-motion="reduced"] *::after {
   background-image:
     radial-gradient(circle, #fff 0 0.65px, transparent 1.3px),
     radial-gradient(circle, rgba(195, 180, 255, 0.9) 0 0.7px, transparent 1.4px);
-
   background-size:
     181px 163px,
     137px 211px;
-
   background-position:
     29px 67px,
     101px 11px;
-
   opacity: 0.34;
   animation: pdTinyStarsB 6.5s ease-in-out infinite alternate;
 }
 
 @keyframes pdTinyStarsA {
-  from {
-    opacity: 0.25;
-  }
-  50% {
-    opacity: 0.62;
-  }
-  to {
-    opacity: 0.34;
-  }
+  from { opacity: 0.25; }
+  50% { opacity: 0.62; }
+  to { opacity: 0.34; }
 }
 
 @keyframes pdTinyStarsB {
-  from {
-    opacity: 0.18;
-  }
-  to {
-    opacity: 0.52;
-  }
+  from { opacity: 0.18; }
+  to { opacity: 0.52; }
 }
 
-/* Existing sparkle assets become small accent stars. */
+/* Existing sparkle assets remain small accent stars. */
 .pd-spark {
   width: 16px !important;
   height: 16px !important;
@@ -1690,8 +1636,6 @@ html[data-pd-motion="reduced"] *::after {
 
 /* =========================================================
    SMALL DETAILED METEORS
-   Direction: upper-right -> lower-left.
-   The glowing head leads; the thin tail points backward.
    ========================================================= */
 
 .pd-meteor {
@@ -1702,7 +1646,6 @@ html[data-pd-motion="reduced"] *::after {
   z-index: 12 !important;
   opacity: 0;
   pointer-events: none;
-
   background: #fff;
   box-shadow:
     0 0 3px #fff,
@@ -1710,12 +1653,10 @@ html[data-pd-motion="reduced"] *::after {
     0 0 14px rgba(142, 111, 255, 0.75);
 }
 
-/* Kill the old bulky meteor artwork. */
 .pd-meteor img {
   display: none !important;
 }
 
-/* Thin tail points upper-right from the head. */
 .pd-meteor::after {
   content: "";
   position: absolute;
@@ -1723,10 +1664,8 @@ html[data-pd-motion="reduced"] *::after {
   top: 1px;
   width: 62px;
   height: 1.4px;
-
   transform-origin: left center;
   transform: rotate(-35deg);
-
   background: linear-gradient(
     90deg,
     rgba(255, 255, 255, 0.95),
@@ -1734,11 +1673,9 @@ html[data-pd-motion="reduced"] *::after {
     rgba(145, 120, 255, 0.28) 68%,
     transparent
   );
-
   filter: blur(0.25px) drop-shadow(0 0 4px rgba(150, 180, 255, 0.8));
 }
 
-/* Extra tiny flare around the meteor head. */
 .pd-meteor::before {
   content: "";
   position: absolute;
@@ -1752,13 +1689,6 @@ html[data-pd-motion="reduced"] *::after {
     0 0 5px #fff,
     0 0 11px rgba(175, 195, 255, 0.95);
 }
-
-/*
-   The CSS movement is LOWER-LEFT:
-   X negative + Y positive.
-
-   This matches the -35deg tail orientation.
-*/
 
 .pd-meteor.m1 {
   top: 12%;
@@ -1779,53 +1709,70 @@ html[data-pd-motion="reduced"] *::after {
 }
 
 @keyframes pdMeteorA {
-  0% {
-    transform: translate(0, 0) rotate(0deg) scale(0.65);
-    opacity: 0;
-  }
-  8% {
-    opacity: 0.95;
-  }
-  34% {
-    opacity: 0.82;
-  }
-  100% {
-    transform: translate(-42vw, 32vh) rotate(0deg) scale(0.48);
-    opacity: 0;
-  }
+  0% { transform: translate(0, 0) rotate(0deg) scale(0.65); opacity: 0; }
+  8% { opacity: 0.95; }
+  34% { opacity: 0.82; }
+  100% { transform: translate(-42vw, 32vh) rotate(0deg) scale(0.48); opacity: 0; }
 }
 
 @keyframes pdMeteorB {
-  0% {
-    transform: translate(0, 0) rotate(0deg) scale(0.55);
-    opacity: 0;
-  }
-  9% {
-    opacity: 0.9;
-  }
-  36% {
-    opacity: 0.7;
-  }
-  100% {
-    transform: translate(-34vw, 28vh) rotate(0deg) scale(0.4);
-    opacity: 0;
-  }
+  0% { transform: translate(0, 0) rotate(0deg) scale(0.55); opacity: 0; }
+  9% { opacity: 0.9; }
+  36% { opacity: 0.7; }
+  100% { transform: translate(-34vw, 28vh) rotate(0deg) scale(0.4); opacity: 0; }
 }
 
 @keyframes pdMeteorC {
-  0% {
-    transform: translate(0, 0) rotate(0deg) scale(0.5);
-    opacity: 0;
+  0% { transform: translate(0, 0) rotate(0deg) scale(0.5); opacity: 0; }
+  9% { opacity: 0.82; }
+  35% { opacity: 0.64; }
+  100% { transform: translate(-30vw, 25vh) rotate(0deg) scale(0.38); opacity: 0; }
+}
+
+/* =========================================================
+   MOBILE BACKGROUND
+   Keep the portrait artwork visible on phone screens.
+   ========================================================= */
+
+@media (max-width: 700px) {
+  .pd-page {
+    background-size: cover !important;
+    background-position: center top !important;
+    background-attachment: fixed !important;
   }
-  9% {
-    opacity: 0.82;
+
+  .pd-meteor::after {
+    width: 43px;
   }
-  35% {
-    opacity: 0.64;
+
+  .pd-meteor.m1 { top: 13%; right: 8%; }
+  .pd-meteor.m2 { top: 26%; right: 35%; }
+  .pd-meteor.m3 { top: 18%; right: 2%; }
+
+  @keyframes pdMeteorA {
+    0% { transform: translate(0, 0) scale(0.6); opacity: 0; }
+    10% { opacity: 0.9; }
+    100% { transform: translate(-55vw, 28vh) scale(0.42); opacity: 0; }
   }
-  100% {
-    transform: translate(-30vw, 25vh) rotate(0deg) scale(0.38);
-    opacity: 0;
+
+  @keyframes pdMeteorB {
+    0% { transform: translate(0, 0) scale(0.5); opacity: 0; }
+    10% { opacity: 0.8; }
+    100% { transform: translate(-45vw, 24vh) scale(0.36); opacity: 0; }
+  }
+
+  @keyframes pdMeteorC {
+    0% { transform: translate(0, 0) scale(0.45); opacity: 0; }
+    10% { opacity: 0.75; }
+    100% { transform: translate(-40vw, 21vh) scale(0.32); opacity: 0; }
+  }
+}
+
+/* Respect reduced-motion preferences. */
+@media (prefers-reduced-motion: reduce) {
+  .pd-sky-layer *,
+  .pd-meteor {
+    animation: none !important;
   }
 }
 
@@ -1833,183 +1780,6 @@ html[data-pd-motion="reduced"] *::after {
    UI / SECTIONS
    ========================================================= */
 
-/* Let the illustration remain visible between sections. */
-.pd-hero {
-  background: transparent !important;
-}
-
-.pd-section {
-  background: transparent !important;
-}
-
-/* Cards remain solid enough for readability. */
-.pd-subject-card {
-  background: linear-gradient(
-    180deg,
-    rgba(11, 17, 47, 0.82),
-    rgba(4, 9, 28, 0.78)
-  ) !important;
-}
-
-/* =========================================================
-   DESKTOP
-   ========================================================= */
-
-@media (min-width: 701px) {
-  .pd-page::before {
-    /*
-      The source artwork is portrait.
-      "cover" would crop a huge amount on a wide monitor,
-      so contain it vertically and let the dark page color
-      fill the side margins.
-    */
-    background-size: auto 100vh;
-    background-position: center top;
-    background-color: #030516;
-  }
-}
-
-/* =========================================================
-   ANDROID / MOBILE
-   ========================================================= */
-
-@media (max-width: 700px) {
-  .pd-page::before {
-    background-size: cover;
-    background-position: center top;
-  }
-
-  .pd-sky-layer {
-    position: fixed !important;
-  }
-
-  .pd-meteor::after {
-    width: 43px;
-  }
-
-  .pd-meteor.m1 {
-    top: 13%;
-    right: 8%;
-  }
-
-  .pd-meteor.m2 {
-    top: 26%;
-    right: 35%;
-  }
-
-  .pd-meteor.m3 {
-    top: 18%;
-    right: 2%;
-  }
-
-  @keyframes pdMeteorA {
-    0% {
-      transform: translate(0, 0) scale(0.6);
-      opacity: 0;
-    }
-    10% {
-      opacity: 0.9;
-    }
-    100% {
-      transform: translate(-55vw, 28vh) scale(0.42);
-      opacity: 0;
-    }
-  }
-
-  @keyframes pdMeteorB {
-    0% {
-      transform: translate(0, 0) scale(0.5);
-      opacity: 0;
-    }
-    10% {
-      opacity: 0.8;
-    }
-    100% {
-      transform: translate(-45vw, 24vh) scale(0.36);
-      opacity: 0;
-    }
-  }
-
-  @keyframes pdMeteorC {
-    0% {
-      transform: translate(0, 0) scale(0.45);
-      opacity: 0;
-    }
-    10% {
-      opacity: 0.75;
-    }
-    100% {
-      transform: translate(-40vw, 21vh) scale(0.32);
-      opacity: 0;
-    }
-  }
-}
-
-/* Reduced motion */
-@media (prefers-reduced-motion: reduce) {
-  .pd-sky-layer *,
-  .pd-meteor {
-    animation: none !important;
-  }
-}
-/* =========================================================
-   FIX 1 — CLEAN FIXED NIGHTSCAPE
-   ========================================================= */
-
-.pd-page {
-  background: #030516 !important;
-}
-
-/* The supplied illustration is the ONLY background artwork */
-.pd-page::before {
-  content: "";
-  position: fixed;
-  inset: 0;
-  z-index: 0;
-  pointer-events: none;
-
-  background-image: url("/anime/backgrounds/PAPERDROP-main-background.webp");
-  background-repeat: no-repeat;
-  background-position: center top;
-  background-size: cover;
-}
-
-/* Very subtle readability layer */
-.pd-page::after {
-  content: "";
-  position: fixed;
-  inset: 0;
-  z-index: 1;
-  pointer-events: none;
-
-  background: linear-gradient(
-    180deg,
-    rgba(2, 4, 18, 0.03),
-    rgba(2, 4, 18, 0.12)
-  );
-}
-
-/* Remove old scenery */
-.pd-scenery {
-  display: none !important;
-}
-
-.pd-sky-layer > img:first-child {
-  display: none !important;
-}
-
-.pd-sky-moon {
-  display: none !important;
-}
-
-/* Don't add any extra background to sections */
-.pd-hero,
-.pd-stats,
-.pd-section,
-.pd-guide,
-.pd-features {
-  background: transparent !important;
-}
 /* =========================================================
    PAPERDROP — FINAL MOBILE / FLOATING UI FIXES
    ========================================================= */
