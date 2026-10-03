@@ -1523,7 +1523,7 @@ html[data-pd-motion="reduced"] *::after {
 }
 
 /* =========================================================
-   PAPERDROPL — SINGLE BACKGROUND LAYER
+   PAPERDROPL — ALPHA-PROVEN ILLUSTRATED BACKGROUND
    The supplied nightscape is the base artwork.
    Moon, torii, city, mountains, lake and large stars are already
    part of this image, so no duplicate scenery is rendered.
@@ -1550,7 +1550,7 @@ html[data-pd-motion="reduced"] *::after {
   z-index: 0;
   pointer-events: none;
 
-  background-image: url("/anime/backgrounds/PAPERDROP-main-background.webp");
+  background-image: url("/anime/backgrounds/paperdrop-nightscape.webp");
   background-repeat: no-repeat;
   background-position: center top;
   background-size: auto 100vh;
@@ -1579,6 +1579,16 @@ html[data-pd-motion="reduced"] *::after {
     rgba(11, 17, 47, 0.82),
     rgba(4, 9, 28, 0.78)
   ) !important;
+}
+
+/* Alpha-proven sizing: preserve the full portrait artwork on desktop,
+   and let mobile fill the viewport like the working alpha version. */
+@media (min-width: 701px) {
+  .pd-page::before {
+    background-size: auto 100vh !important;
+    background-position: center top !important;
+    background-color: #030516 !important;
+  }
 }
 
 /* =========================================================
@@ -1755,7 +1765,7 @@ html[data-pd-motion="reduced"] *::after {
 
 @media (max-width: 700px) {
   .pd-page::before {
-    background-size: auto 100vh !important;
+    background-size: cover !important;
     background-position: center top !important;
   }
 
