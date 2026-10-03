@@ -1,0 +1,7 @@
+node_modules/
+.next/
+.npm/
+.amplify/
+*.tsbuildinfo
+.env*.local
+.DS_Store
