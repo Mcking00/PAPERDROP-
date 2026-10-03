@@ -2233,3 +2233,18 @@ html[data-pd-motion="reduced"] *::after {
 .pd-library-error button { border: 1px solid rgba(255,255,255,.16); border-radius: 999px; padding: 9px 16px; background: rgba(255,255,255,.08); color: inherit; cursor: pointer; }
 @keyframes pdSkeletonShimmer { 100% { transform: translateX(100%); } }
 @media (prefers-reduced-motion: reduce) { .pd-skeleton::after { animation: none; } }
+
+
+/* Reliable fixed nightscape layer */
+.pd-nightscape {
+  position: fixed !important;
+  inset: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  object-fit: cover !important;
+  object-position: center top !important;
+  display: block !important;
+  z-index: 0 !important;
+  pointer-events: none !important;
+  user-select: none !important;
+}
