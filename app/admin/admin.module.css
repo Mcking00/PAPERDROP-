@@ -185,5 +185,5 @@
   .cardActions>*{min-width:0}.sectionRow:hover{transform:none}
 }
 @media(prefers-reduced-motion:reduce){
-  *,*::before,*::after{animation-duration:.001ms!important;animation-iteration-count:1!important;transition:none!important}
+  .shell *, .shell *::before, .shell *::after{animation-duration:.001ms!important;animation-iteration-count:1!important;transition:none!important}
 }

@@ -12,7 +12,6 @@ type Section = Schema["Section"]["type"];
 type Document = Schema["Document"]["type"];
 type UploadItem = {id:string;file:File;sectionId:string;progress:number;status:"queued"|"uploading"|"done"|"error"|"duplicate";error?:string};
 const client=generateClient<Schema>();
-useEffect(()=>{const onKey=(e:KeyboardEvent)=>{if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==="k"){e.preventDefault();setSearchPanelOpen(v=>!v)}if(e.key==="Escape")setSearchPanelOpen(false)};window.addEventListener("keydown",onKey);return()=>window.removeEventListener("keydown",onKey)},[]);
 
 const LOCAL_DEMO=Object.keys(outputs).length===0;
 const MAX_SIZE=50*1024*1024;
@@ -45,6 +44,7 @@ export default function Home(){
  const [sections,setSections]=useState<Section[]>([]),[docs,setDocs]=useState<Document[]>([]),[selected,setSelected]=useState<Section|null>(null);
  const [search,setSearch]=useState(""),[searchOpen,setSearchOpen]=useState(false),[sectionFilter,setSectionFilter]=useState("all"),[sort,setSort]=useState("relevance"),[active,setActive]=useState(0);
  const [uploadOpen,setUploadOpen]=useState(false),[settingsOpen,setSettingsOpen]=useState(false), [searchPanelOpen,setSearchPanelOpen]=useState(false),[toast,setToast]=useState(""),[detail,setDetail]=useState<Document|null>(null);
+ useEffect(()=>{const onKey=(e:KeyboardEvent)=>{if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==="k"){e.preventDefault();setSearchPanelOpen(v=>!v)}if(e.key==="Escape")setSearchPanelOpen(false)};window.addEventListener("keydown",onKey);return()=>window.removeEventListener("keydown",onKey)},[]);
  const [loading,setLoading]=useState(true),[error,setError]=useState("");
  const [queue,setQueue]=useState<UploadItem[]>([]),[uploadBusy,setUploadBusy]=useState(false),[drag,setDrag]=useState(false),[uploadMessage,setUploadMessage]=useState(""),[draftRestore,setDraftRestore]=useState(false);
  const load=useCallback(async()=>{setLoading(true);setError("");if(LOCAL_DEMO){setSections(DEMO_SECTIONS);setDocs([]);setLoading(false);return}try{const [s,d]=await Promise.all([client.models.Section.list({authMode:"identityPool"}),client.models.Document.list({authMode:"identityPool"})]);const e=s.errors?.[0]?.message||d.errors?.[0]?.message;if(e)throw new Error(e);setSections([...s.data].sort((a,b)=>(a.sortOrder??0)-(b.sortOrder??0)));setDocs(d.data.filter(x=>(x.status??"published")==="published"))}catch(e){setError(e instanceof Error?e.message:"Library could not be loaded.")}finally{setLoading(false)}},[]);
