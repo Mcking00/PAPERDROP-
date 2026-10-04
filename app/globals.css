@@ -2470,3 +2470,46 @@ html:not(.pd-animated-background) .pd-guide-art *{animation:none!important}
   .pd-uploader-actions{width:100%;display:grid;grid-template-columns:1fr 1.35fr}
   .pd-uploader-actions button{width:100%}
 }
+
+/* PAPERDROP — browser tap/focus polish */
+/* Remove the browser's default blue touch flash while keeping PAPERDROP's own interaction states. */
+html,
+body,
+a,
+button,
+input,
+select,
+textarea,
+[role="button"],
+.pd-subject-card {
+  -webkit-tap-highlight-color: transparent;
+}
+
+a:focus,
+button:focus,
+input:focus,
+select:focus,
+textarea:focus,
+[role="button"]:focus,
+.pd-subject-card:focus {
+  outline: none;
+}
+
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+[role="button"]:focus-visible {
+  outline: 2px solid var(--pd-accent, #8f82ff);
+  outline-offset: 2px;
+}
+
+.pd-subject-card {
+  -webkit-touch-callout: none;
+}
+
+.pd-subject-card:active {
+  transform: translateY(-2px) scale(.995);
+}
+
