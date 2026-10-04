@@ -134,7 +134,10 @@ check("TSX/JSX syntax compilation", () => {
 });
 
 check("JSX tag-balance scan", () => {
-  const files = sourceFiles();
+  // TypeScript's TSX parser is authoritative for .tsx files; the old regex
+  // scanner misread TypeScript generics such as <typeof> and <Uint8Array>.
+  // Keep this check for plain .jsx files only and let check 6 validate TSX.
+  const files = walk(root).filter((file) => /\.jsx$/.test(file));
   const failures = [];
   const tagRe = /<\/?([A-Za-z][A-Za-z0-9._:-]*)(?:\s[^<>]*?)?\/?\s*>/g;
   for (const file of files) {
@@ -266,8 +269,13 @@ check("static asset existence", () => {
     for (const ref of refs) {
       if (!ref.startsWith("/") || ref.startsWith("//")) continue;
       const clean = ref.split("?")[0].split("#")[0];
-      if (!clean || clean.startsWith("/api/")) continue;
-      if (!fs.existsSync(path.join(root, "public", clean.slice(1))) && !clean.startsWith("/_next/")) {
+      if (!clean || clean.startsWith("/api/") || clean.startsWith("/_next/")) continue;
+      // href="/admin" and other extensionless URLs are application routes, not
+      // public assets. Only validate asset-like paths or known public folders.
+      const assetLike = /\.(?:png|jpe?g|webp|gif|svg|ico|avif|mp4|webm|woff2?|ttf|css|js|json)$/i.test(clean) ||
+        /^\/(?:anime|images|icons|assets|fonts)\//.test(clean);
+      if (!assetLike) continue;
+      if (!fs.existsSync(path.join(root, "public", clean.slice(1)))) {
         failures.push(`${relative(file)} -> ${clean}`);
       }
     }
