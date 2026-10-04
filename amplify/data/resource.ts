@@ -1,6 +1,22 @@
 import { type ClientSchema, a, defineData } from "@aws-amplify/backend";
+import { submitPdfForReview } from "../functions/submit-pdf-for-review/resource";
 
 const schema = a.schema({
+  submitPdfForReview: a.mutation()
+    .arguments({
+      originalName: a.string().required(),
+      storagePath: a.string().required(),
+      size: a.integer().required(),
+      sectionId: a.id().required(),
+      pageCount: a.integer(),
+      title: a.string(),
+      author: a.string(),
+      fileHash: a.string().required(),
+    })
+    .returns(a.boolean())
+    .authorization((allow) => [allow.guest()])
+    .handler(a.handler.function(submitPdfForReview)),
+
   Section: a.model({
     name: a.string().required(),
     description: a.string(),
@@ -34,8 +50,15 @@ const schema = a.schema({
     index("status"),
   ])
   .authorization((allow) => [
-    allow.guest().to(["create"]),
     allow.groups(["ADMINS"]).to(["read", "update", "delete"]),
+  ]),
+
+  HashReservation: a.model({
+    status: a.string().required(),
+    submissionId: a.id(),
+    documentId: a.id(),
+  }).authorization((allow) => [
+    allow.groups(["ADMINS"]).to(["create", "read", "update", "delete"]),
   ]),
 
   Document: a.model({
@@ -115,7 +138,7 @@ const schema = a.schema({
   .authorization((allow) => [
     allow.groups(["ADMINS"]).to(["create", "read", "update", "delete"]),
   ]),
-});
+}).authorization((allow) => [allow.resource(submitPdfForReview)]);
 
 export type Schema = ClientSchema<typeof schema>;
 export const data = defineData({
