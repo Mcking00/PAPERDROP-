@@ -220,8 +220,67 @@ function AdminArea(){
    <section className={styles.panel}><div className={styles.panelHead}><div><span className={styles.kicker}>LIBRARY</span><h2>Published & Trash <span className={styles.count}>{publishedDocs.length}</span></h2><p className={styles.muted}>Move to Trash instead of immediate deletion. Restore or permanently delete from there.</p></div><div className={styles.bulkBar}>{selectedIds.length>0&&<><b>{selectedIds.length} selected</b><button className={styles.dangerButton} onClick={()=>void bulkTrash()}>Trash selected</button><button className={styles.textButton} onClick={()=>setSelectedIds([])}>Clear</button></>}</div></div><div className={styles.statusTabs}>{[['attention','Active + Trash'],['published','Published'],['trash','Trash']].map(([v,l])=><button key={v} className={statusFilter===v?styles.tabActive:styles.tab} onClick={()=>setStatusFilter(v)}>{l}</button>)}</div>{publishedDocs.length?<div className={styles.cardGrid}>{publishedDocs.map(doc=><DocumentCard key={doc.id} doc={doc} section={sectionMap.get(doc.sectionId)} checked={selectedIds.includes(doc.id)} busy={busy} onToggle={()=>setSelectedIds(v=>v.includes(doc.id)?v.filter(x=>x!==doc.id):[...v,doc.id])} onOpen={()=>openDetail(doc)} onTrash={()=>void trashDoc(doc)} onRestore={()=>void restoreDoc(doc)} onPermanent={()=>void permanentDelete(doc)} onReplace={()=>{setReplaceTarget(doc);setDetail(doc);replaceInput.current?.click()}}/>)}</div>:<Empty text="No documents match the current filters."/>}</section>
    <input ref={replaceInput} hidden type="file" accept="application/pdf,.pdf" onChange={e=>{const f=e.target.files?.[0];if(f&&replaceTarget)void replaceDoc(replaceTarget,f);setReplaceTarget(null);e.currentTarget.value=''}}/>
 
-   <section className={styles.twoCol}><section className={styles.panel}><div className={styles.panelHead}><div><span className={styles.kicker}>SECTIONS</span><h2>Section manager</h2><p className={styles.muted}>Nested sections are supported up to a practical three-level hierarchy.</p></div></div><div className={styles.sectionForm}><input className={styles.field} value={name} onChange={e=>setName(e.target.value)} placeholder="Section name" /><input className={styles.field} value={description} onChange={e=>setDescription(e.target.value)} placeholder="Description" /><select className={styles.field} value={parentId} onChange={e=>setParentId(e.target.value)}><option value="">Top-level</option>{sections.map(s=><option key={s.id} value={s.id}>Child of {s.name}</option>)}</select><button className={styles.primary} disabled={!name.trim()} onClick={()=>void addSection()}>{editingSection?'Save changes':'Add section'}</button>{editingSection&&<button className={styles.secondary} onClick={()=>{setEditingSection(null);setName('');setDescription('');setParentId('')}}>Cancel</button></div><div className={styles.sectionTree}>{sections.map(s=><div className={styles.sectionRow} key={s.id}><div className={styles.treeIndent} style={{marginLeft:Math.min(36,(s.parentId?1:0)*18)}}><b>{s.name}</b><span>{docCount.get(s.id)||0} PDFs · {childCount.get(s.id)||0} children</span></div><div className={styles.actions}><button className={styles.iconButton} onClick={()=>void moveSection(s,-1)} title="Move up">↑</button><button className={styles.iconButton} onClick={()=>void moveSection(s,1)} title="Move down">↓</button><button className={styles.textButton} onClick={()=>{setEditingSection(s);setName(s.name);setDescription(s.description||'');setParentId(s.parentId||'')}}>Use</button><button className={styles.dangerLink} onClick={()=>{setDeleteSection(s);setDeleteDestination(s.parentId||'')}}>Delete</button></div></div>)}</div></section>
-   <section className={styles.panel}><div className={styles.panelHead}><div><span className={styles.kicker}>REPORTS</span><h2>Problem PDFs <span className={styles.count}>{reportFiltered.length}</span></h2><p className={styles.muted}>User reports land here without exposing private submission files.</p></div></div>{reportFiltered.length?reportFiltered.map(r=><div className={styles.reportRow} key={r.id}><div><b>{docs.find(d=>d.id===r.documentId)?.originalName||'Unknown PDF'}</b><span>{r.reason} · {date(r.createdAt)}</span><p>{r.description||'No details.'}</p></div><button className={styles.secondary} onClick={()=>void resolveReport(r)}>Resolve</button></div>):<Empty text="No open reports."/>}</section></section>
+   <section className={styles.twoCol}>
+    <section className={styles.panel}>
+     <div className={styles.panelHead}>
+      <div>
+       <span className={styles.kicker}>SECTIONS</span>
+       <h2>Section manager</h2>
+       <p className={styles.muted}>Nested sections are supported up to a practical three-level hierarchy.</p>
+      </div>
+     </div>
+     <div className={styles.sectionForm}>
+      <input className={styles.field} value={name} onChange={e=>setName(e.target.value)} placeholder="Section name" />
+      <input className={styles.field} value={description} onChange={e=>setDescription(e.target.value)} placeholder="Description" />
+      <select className={styles.field} value={parentId} onChange={e=>setParentId(e.target.value)}>
+       <option value="">Top-level</option>
+       {sections.map(s=><option key={s.id} value={s.id}>Child of {s.name}</option>)}
+      </select>
+      <button className={styles.primary} disabled={!name.trim()} onClick={()=>void addSection()}>
+       {editingSection?'Save changes':'Add section'}
+      </button>
+      {editingSection&&
+       <button className={styles.secondary} onClick={()=>{setEditingSection(null);setName('');setDescription('');setParentId('')}}>
+        Cancel
+       </button>}
+     </div>
+     <div className={styles.sectionTree}>
+      {sections.map(s=>(
+       <div className={styles.sectionRow} key={s.id}>
+        <div className={styles.treeIndent} style={{marginLeft:Math.min(36,(s.parentId?1:0)*18)}}>
+         <b>{s.name}</b>
+         <span>{docCount.get(s.id)||0} PDFs · {childCount.get(s.id)||0} children</span>
+        </div>
+        <div className={styles.actions}>
+         <button className={styles.iconButton} onClick={()=>void moveSection(s,-1)} title="Move up">↑</button>
+         <button className={styles.iconButton} onClick={()=>void moveSection(s,1)} title="Move down">↓</button>
+         <button className={styles.textButton} onClick={()=>{setEditingSection(s);setName(s.name);setDescription(s.description||'');setParentId(s.parentId||'')}}>Use</button>
+         <button className={styles.dangerLink} onClick={()=>{setDeleteSection(s);setDeleteDestination(s.parentId||'')}}>Delete</button>
+        </div>
+       </div>
+      ))}
+     </div>
+    </section>
+    <section className={styles.panel}>
+     <div className={styles.panelHead}>
+      <div>
+       <span className={styles.kicker}>REPORTS</span>
+       <h2>Problem PDFs <span className={styles.count}>{reportFiltered.length}</span></h2>
+       <p className={styles.muted}>User reports land here without exposing private submission files.</p>
+      </div>
+     </div>
+     {reportFiltered.length ? reportFiltered.map(r=>(
+      <div className={styles.reportRow} key={r.id}>
+       <div>
+        <b>{docs.find(d=>d.id===r.documentId)?.originalName||'Unknown PDF'}</b>
+        <span>{r.reason} · {date(r.createdAt)}</span>
+        <p>{r.description||'No details.'}</p>
+       </div>
+       <button className={styles.secondary} onClick={()=>void resolveReport(r)}>Resolve</button>
+      </div>
+     )) : <Empty text="No open reports."/>}
+    </section>
+   </section>
 
    <section className={styles.panel}><div className={styles.panelHead}><div><span className={styles.kicker}>ACTIVITY</span><h2>Recent admin activity</h2></div><input className={styles.field} value={activityQuery} onChange={e=>setActivityQuery(e.target.value)} placeholder="Search activity…" /></div>{activityFiltered.length?activityFiltered.slice(0,18).map(a=><div className={styles.activityRow} key={a.id}><span className={styles.activityDot}/><div><b>{a.summary}</b><span>{a.action} · {date(a.createdAt)}</span></div></div>):<Empty text="No activity yet."/>}</section>
   </main>
