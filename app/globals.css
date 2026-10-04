@@ -2316,3 +2316,153 @@ html:not(.pd-animated-background) .pd-float-plane,
 html:not(.pd-animated-background) .pd-moon,
 html:not(.pd-animated-background) .pd-sky-layer *,
 html:not(.pd-animated-background) .pd-guide-art *{animation:none!important}
+
+
+/* =========================================================
+   PAPERDROP — PREMIUM UPLOAD SHEET
+   ========================================================= */
+.pd-uploader-modal{
+  width:min(780px,calc(100vw - 28px))!important;
+  max-height:min(88vh,820px)!important;
+  overflow:auto!important;
+  scrollbar-width:thin;
+}
+.pd-uploader{
+  position:relative;
+  overflow:hidden;
+  padding:24px!important;
+  border:1px solid rgba(164,145,255,.20)!important;
+  border-radius:26px!important;
+  background:
+    radial-gradient(circle at 8% 0%,rgba(126,91,255,.16),transparent 34%),
+    radial-gradient(circle at 92% 12%,rgba(67,205,255,.08),transparent 28%),
+    linear-gradient(145deg,rgba(13,16,43,.98),rgba(5,8,26,.99))!important;
+  box-shadow:0 35px 100px rgba(0,0,0,.62),0 0 70px rgba(112,87,255,.12)!important;
+}
+.pd-uploader::before{
+  content:"";
+  position:absolute;
+  left:24px;right:24px;top:0;height:1px;
+  background:linear-gradient(90deg,transparent,rgba(164,145,255,.8),rgba(103,216,255,.45),transparent);
+  pointer-events:none;
+}
+.pd-uploader-head{
+  position:relative;
+  padding-bottom:17px;
+  border-bottom:1px solid rgba(255,255,255,.07);
+}
+.pd-uploader-head h2{
+  margin:6px 0 5px!important;
+  font-size:28px!important;
+  letter-spacing:-.035em;
+  background:linear-gradient(100deg,#fff,#cfc7ff 58%,#8ee8ff);
+  -webkit-background-clip:text;
+  background-clip:text;
+  color:transparent;
+}
+.pd-uploader-head p{font-size:11px!important;color:#8791b1!important}
+.pd-uploader .pd-icon-button{
+  width:40px;height:40px;border-radius:13px;
+  border:1px solid rgba(255,255,255,.10);
+  background:rgba(255,255,255,.045);
+  color:#e7ebff;
+  font-size:23px;
+  cursor:pointer;
+}
+.pd-uploader .pd-icon-button:hover{
+  background:rgba(143,130,255,.13);
+  border-color:rgba(164,145,255,.35);
+  transform:rotate(4deg) scale(1.03);
+}
+.pd-dropzone{
+  position:relative;
+  min-height:172px!important;
+  margin-top:17px!important;
+  border:1px dashed rgba(157,135,255,.46)!important;
+  border-radius:20px!important;
+  background:
+    radial-gradient(circle at 50% 35%,rgba(126,92,255,.13),transparent 42%),
+    rgba(103,78,255,.035)!important;
+  box-shadow:inset 0 0 35px rgba(117,91,255,.035);
+  transition:transform .22s var(--pd-ease),border-color .22s ease,background .22s ease,box-shadow .22s ease;
+}
+.pd-dropzone::before{
+  content:"";
+  position:absolute;
+  inset:9px;
+  border:1px solid rgba(255,255,255,.035);
+  border-radius:14px;
+  pointer-events:none;
+}
+.pd-dropzone:hover,.pd-dropzone.is-dragging{
+  transform:translateY(-2px);
+  border-color:#a997ff!important;
+  background:
+    radial-gradient(circle at 50% 35%,rgba(126,92,255,.21),transparent 48%),
+    rgba(103,78,255,.07)!important;
+  box-shadow:0 12px 35px rgba(95,72,255,.10),inset 0 0 35px rgba(117,91,255,.06);
+}
+.pd-drop-icon{
+  position:relative;
+  width:56px!important;height:56px!important;
+  border-radius:17px!important;
+  background:linear-gradient(145deg,rgba(132,104,255,.28),rgba(69,198,255,.10))!important;
+  border:1px solid rgba(171,153,255,.24);
+  color:#c6baff!important;
+  font-size:30px!important;
+  box-shadow:0 10px 28px rgba(91,69,255,.16),0 0 24px rgba(126,103,255,.10);
+}
+.pd-drop-icon::after{
+  content:"";
+  position:absolute;inset:-5px;border-radius:21px;
+  border:1px solid rgba(148,130,255,.10);
+}
+.pd-dropzone strong{font-size:14px!important;color:#f3f5ff}
+.pd-dropzone span{font-size:10px!important;color:#7f89aa!important}
+.pd-queue{gap:9px!important;margin-top:14px!important}
+.pd-queue-item{
+  border:1px solid rgba(255,255,255,.075)!important;
+  border-radius:15px!important;
+  background:linear-gradient(100deg,rgba(255,255,255,.035),rgba(126,103,255,.025))!important;
+  padding:11px!important;
+}
+.pd-queue-item:hover{
+  border-color:rgba(155,137,255,.24)!important;
+  background:rgba(126,103,255,.055)!important;
+}
+.pd-pdf-badge{
+  width:42px!important;height:42px!important;flex-basis:42px!important;
+  border-radius:12px!important;
+  background:linear-gradient(145deg,rgba(112,88,255,.18),rgba(59,202,255,.07))!important;
+  border:1px solid rgba(143,130,255,.13);
+}
+.pd-queue-copy strong{font-size:11px!important;color:#edf0ff}
+.pd-queue-copy span{color:#737f9f!important}
+.pd-queue-item select{
+  background:rgba(8,12,34,.9)!important;
+  border-color:rgba(255,255,255,.09)!important;
+}
+.pd-uploader-footer{
+  margin-top:16px!important;
+  padding-top:14px;
+  border-top:1px solid rgba(255,255,255,.065);
+}
+.pd-uploader-actions .pd-primary-sm{
+  box-shadow:0 8px 22px rgba(104,80,255,.20);
+}
+@media(max-width:700px){
+  .pd-uploader-modal{
+    width:calc(100vw - 16px)!important;
+    max-height:calc(100svh - 28px)!important;
+  }
+  .pd-uploader{
+    padding:18px!important;
+    border-radius:23px!important;
+  }
+  .pd-uploader-head h2{font-size:23px!important}
+  .pd-dropzone{min-height:145px!important;margin-top:14px!important}
+  .pd-drop-icon{width:50px!important;height:50px!important;border-radius:15px!important}
+  .pd-uploader-footer{align-items:stretch;flex-direction:column}
+  .pd-uploader-actions{width:100%;display:grid;grid-template-columns:1fr 1.35fr}
+  .pd-uploader-actions button{width:100%}
+}
