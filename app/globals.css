@@ -2276,3 +2276,82 @@ html:not(.pd-animated-background) .pd-float-plane,
 html:not(.pd-animated-background) .pd-moon,
 html:not(.pd-animated-background) .pd-sky-layer *,
 html:not(.pd-animated-background) .pd-guide-art *{animation:none!important}
+
+
+/* Search panel/mobile overflow hardening */
+.pd-search-wrap,
+.pd-search-popover,
+.pd-search-popover *{
+  box-sizing:border-box;
+}
+.pd-search-wrap{min-width:0;position:relative}
+.pd-search-popover{
+  width:100%;
+  max-width:100%;
+  min-width:0;
+  overflow:hidden;
+}
+.pd-search-tools{
+  grid-template-columns:minmax(0,1fr) minmax(0,1fr);
+}
+.pd-search-tools select,
+.pd-search-result,
+.pd-search-result strong,
+.pd-search-result small{
+  min-width:0;
+  max-width:100%;
+}
+.pd-search-result strong,
+.pd-search-result small{
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+.pd-search-popover .pd-search-result{
+  width:100%;
+}
+@media(max-width:700px){
+  .pd-search-wrap{
+    width:min(220px,calc(100vw - 132px))!important;
+    max-width:calc(100vw - 132px)!important;
+  }
+  .pd-search-popover{
+    left:0!important;
+    right:auto!important;
+    width:min(420px,calc(100vw - 28px))!important;
+    max-width:calc(100vw - 28px)!important;
+    max-height:calc(100dvh - 76px);
+    overflow-x:hidden;
+    overflow-y:auto;
+    padding:9px!important;
+  }
+  .pd-search{
+    width:100%;
+    min-width:0;
+  }
+  .pd-search input{
+    min-width:0!important;
+    width:100%;
+  }
+
+  /* Also protects the large command/search panel used by the mobile UI. */
+  .pd-search-overlay,
+  .pd-search-dialog,
+  .pd-search-panel,
+  .pd-search-modal,
+  .pd-command-palette{
+    box-sizing:border-box;
+    width:min(680px,calc(100vw - 28px))!important;
+    max-width:calc(100vw - 28px)!important;
+    margin-inline:auto!important;
+    overflow-x:hidden;
+  }
+  .pd-search-overlay *,
+  .pd-search-dialog *,
+  .pd-search-panel *,
+  .pd-search-modal *,
+  .pd-command-palette *{
+    box-sizing:border-box;
+    max-width:100%;
+  }
+}
