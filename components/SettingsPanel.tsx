@@ -28,6 +28,13 @@ type Settings = {
 
 const KEY = "paperdrop-settings-v1";
 
+const UPDATE_LOG = [
+  { date: "Oct 7, 2026", tag: "NEW", tone: "new", title: "What’s New is here", text: "You can now see recent PAPERDROPL changes directly from Settings." },
+  { date: "Oct 6, 2026", tag: "IMPROVED", tone: "improved", title: "Smoother interactions", text: "Tap, focus, and mobile interactions were refined for a cleaner feel." },
+  { date: "Oct 5, 2026", tag: "IMPROVED", tone: "improved", title: "Settings got more control", text: "Appearance, motion, navigation, library, PDF, upload, and accessibility preferences are easier to manage." },
+  { date: "Oct 4, 2026", tag: "FIXED", tone: "fixed", title: "Mobile polish", text: "Several small mobile layout and interaction details were tightened up." },
+];
+
 const defaults: Settings = {
   theme: "dark",
   accent: "violet",
@@ -196,6 +203,18 @@ export default function SettingsPanel({ onClose, onToast }: { onClose: () => voi
         {section("language", "Language", "文", <>
           <SettingRow title="Interface language" description="Choose the language hint used by PAPERDROP."><Segmented value={settings.language} options={[["english","English"],["hinglish","Hinglish"]]} onChange={v => patch("language", v as Settings["language"])} /></SettingRow><div className="pd-settings-note"><strong>{settings.language === "hinglish" ? "Hinglish mode" : "English mode"}</strong><span>{settings.language === "hinglish" ? "India-friendly interface semantics are enabled where supported." : "Standard English interface semantics are enabled."}</span></div>
         </>)}
+
+        {section("updates", "What’s New", "✦", <div className="pd-update-log">
+          <div className="pd-update-intro"><span className="pd-update-orb">✦</span><div><strong>Recent changes</strong><p>See what has changed in PAPERDROPL lately.</p></div></div>
+          <div className="pd-update-timeline">{UPDATE_LOG.map((item, index) => <article className="pd-update-item" key={item.date + item.title}>
+            <div className="pd-update-marker"><span /></div>
+            <div className="pd-update-card">
+              <div className="pd-update-meta"><span>{item.date}</span><b className={item.tone}>{item.tag}</b></div>
+              <h3>{item.title}{index === 0 && <span className="pd-update-spark">✦</span>}</h3>
+              <p>{item.text}</p>
+            </div>
+          </article>)}</div>
+        </div>)}
 
         {section("about", "About PAPERDROP", "i", <>
           <div className="pd-settings-about"><b>PAPERDROP</b><span>Student-powered document library</span><small>Preferences are stored locally in your browser. They do not change your account, documents, or admin data.</small></div>
