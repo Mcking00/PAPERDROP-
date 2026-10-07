@@ -2513,3 +2513,23 @@ textarea:focus-visible,
   transform: translateY(-2px) scale(.995);
 }
 
+
+
+/* PAPERDROPL — What's New / update log */
+.pd-update-log{display:grid;gap:16px}
+.pd-update-intro{display:flex;align-items:center;gap:12px;padding:14px;border:1px solid rgba(139,119,255,.16);border-radius:17px;background:linear-gradient(120deg,rgba(126,96,255,.10),rgba(77,210,255,.045));box-shadow:inset 0 1px rgba(255,255,255,.035)}
+.pd-update-orb{width:42px;height:42px;display:grid;place-items:center;flex:0 0 42px;border-radius:14px;background:radial-gradient(circle at 35% 30%,#e8ddff,#7657ff 48%,#25185f);color:#fff;box-shadow:0 0 22px rgba(129,100,255,.25);animation:pdUpdatePulse 3s ease-in-out infinite}
+.pd-update-intro strong{font-size:12px}.pd-update-intro p{margin:3px 0 0;color:#7883a5;font-size:9px}
+.pd-update-timeline{position:relative;padding-left:12px}
+.pd-update-timeline::before{content:"";position:absolute;left:17px;top:10px;bottom:10px;width:1px;background:linear-gradient(180deg,rgba(143,130,255,.55),rgba(143,130,255,.08))}
+.pd-update-item{position:relative;display:grid;grid-template-columns:24px 1fr;gap:9px;padding-bottom:11px}
+.pd-update-marker{position:relative;z-index:1;display:flex;justify-content:center;padding-top:17px}
+.pd-update-marker span{width:9px;height:9px;border-radius:50%;background:var(--pd-accent,#8f82ff);box-shadow:0 0 0 4px rgba(143,130,255,.10),0 0 14px rgba(143,130,255,.42)}
+.pd-update-card{padding:13px 14px;border:1px solid rgba(255,255,255,.065);border-radius:15px;background:linear-gradient(120deg,rgba(255,255,255,.035),rgba(126,103,255,.025));transition:transform .2s ease,border-color .2s ease,background .2s ease}
+.pd-update-card:hover{transform:translateX(2px);border-color:rgba(155,137,255,.22);background:rgba(126,103,255,.055)}
+.pd-update-meta{display:flex;align-items:center;justify-content:space-between;gap:8px;color:#697595;font-size:8px;text-transform:uppercase;letter-spacing:.08em}
+.pd-update-meta b{font-size:7px;padding:4px 6px;border-radius:999px;letter-spacing:.08em}.pd-update-meta b.new{color:#bfb4ff;background:rgba(126,100,255,.14);border:1px solid rgba(143,130,255,.22)}.pd-update-meta b.improved{color:#8de8ff;background:rgba(75,205,255,.08);border:1px solid rgba(75,205,255,.15)}.pd-update-meta b.fixed{color:#8ff0bf;background:rgba(77,220,145,.08);border:1px solid rgba(77,220,145,.14)}
+.pd-update-card h3{margin:8px 0 4px;font-size:11px;color:#f0f2ff}.pd-update-card p{margin:0;color:#7883a5;font-size:9px;line-height:1.55}.pd-update-spark{margin-left:6px;color:#9c8cff;animation:twinkle 2s ease-in-out infinite}
+@keyframes pdUpdatePulse{0%,100%{transform:translateY(0);box-shadow:0 0 22px rgba(129,100,255,.25)}50%{transform:translateY(-2px);box-shadow:0 0 30px rgba(129,100,255,.40)}}
+html.pd-performance-mode .pd-update-orb,html[data-pdMotion="off"] .pd-update-orb{animation:none}
+@media(max-width:700px){.pd-update-intro{padding:12px}.pd-update-orb{width:38px;height:38px;flex-basis:38px;border-radius:12px}.pd-update-timeline{padding-left:6px}.pd-update-timeline::before{left:11px}.pd-update-item{grid-template-columns:18px 1fr;gap:8px}.pd-update-card{padding:12px}.pd-update-card h3{font-size:10px}.pd-update-card p{font-size:8px}}
