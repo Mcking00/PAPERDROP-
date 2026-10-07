@@ -2533,3 +2533,20 @@ textarea:focus-visible,
 @keyframes pdUpdatePulse{0%,100%{transform:translateY(0);box-shadow:0 0 22px rgba(129,100,255,.25)}50%{transform:translateY(-2px);box-shadow:0 0 30px rgba(129,100,255,.40)}}
 html.pd-performance-mode .pd-update-orb,html[data-pdMotion="off"] .pd-update-orb{animation:none}
 @media(max-width:700px){.pd-update-intro{padding:12px}.pd-update-orb{width:38px;height:38px;flex-basis:38px;border-radius:12px}.pd-update-timeline{padding-left:6px}.pd-update-timeline::before{left:11px}.pd-update-item{grid-template-columns:18px 1fr;gap:8px}.pd-update-card{padding:12px}.pd-update-card h3{font-size:10px}.pd-update-card p{font-size:8px}}
+
+
+/* PAPERDROPL — full-viewport desktop atmosphere */
+@media (min-width: 701px) {
+  .pd-page::before {
+    background-size: cover !important;
+    background-position: center center !important;
+    background-repeat: no-repeat !important;
+  }
+}
+
+@media (max-width: 700px) {
+  .pd-page::before {
+    background-size: cover !important;
+    background-position: center top !important;
+  }
+}
