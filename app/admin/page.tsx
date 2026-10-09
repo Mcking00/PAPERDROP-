@@ -63,7 +63,8 @@ function AdminArea(){
    qpatch(item.id,{status:'uploading',progress:0,error:undefined});
    let path='';
    let hash='';
-    const reservationOwner=crypto.randomUUID();
+   let documentCreateAttempted=false;
+   const reservationOwner=crypto.randomUUID();
    try{
     await assertPdfHeader(item.file);
     hash=await hashFile(item.file);
@@ -73,6 +74,7 @@ function AdminArea(){
     await uploadData({path,data:item.file,options:{contentType:'application/pdf',onProgress:({transferredBytes,totalBytes})=>qpatch(item.id,{progress:Math.min(99,totalBytes?Math.round(transferredBytes/totalBytes*100):0)})}}).result;
     const lock=await client.models.HashReservation.create({id:hash,status:'pending',documentId:hash,submissionId:reservationOwner},{authMode:'userPool'});
     if(lock.errors?.length||!lock.data)throw new Error(lock.errors?.[0]?.message||'This PDF is already reserved, submitted, or published.');
+     documentCreateAttempted=true;
      const r=await client.models.Document.create({id:hash,originalName:item.file.name.slice(0,180),storagePath:path,size:item.file.size,sectionId:item.sectionId,status:'published',pageCount:m.pages,title:m.title,author:m.author,fileHash:hash,processingStatus:'complete',publishedAt:new Date().toISOString(),currentVersion:1},{authMode:'userPool'});
     if(r.errors?.length||!r.data)throw new Error(r.errors?.[0]?.message||'The document could not be published.');
     const promoted=await client.models.HashReservation.update({id:hash,status:'published',documentId:r.data.id,submissionId:null},{authMode:'userPool'});
@@ -89,6 +91,7 @@ function AdminArea(){
      try{
       const check=await client.models.Document.get({id:hash},{authMode:'userPool'});
       if(check.errors?.length)uncertain=true;
+      else if(!check.data&&documentCreateAttempted)uncertain=true;
       else if(check.data?.storagePath===path&&check.data.fileHash===hash){
        // The document write may have committed even if its response failed.
        // Preserve both the object and reservation until an admin can reconcile it.
@@ -115,7 +118,7 @@ function AdminArea(){
  }
  async function approve(item:Submission){
  if(item.fileHash&&(docs.some(d=>d.fileHash===item.fileHash)||newlyPublishedHashes.current.has(item.fileHash))){setMessage('This PDF matches an existing or just-published document. Reject this duplicate instead.');return}
- setBusy(item.id);let dest='';let createdId:string|undefined;let reservationPublished=false;let submissionApproved=false;
+ setBusy(item.id);let dest='';let createdId:string|undefined;let documentCreateAttempted=false;let reservationPublished=false;let submissionApproved=false;
  try{
   if(item.fileHash){
    const existing=await client.models.HashReservation.get({id:item.fileHash},{authMode:'userPool'});
@@ -128,6 +131,7 @@ function AdminArea(){
   }
   dest='public/'+(item.fileHash||item.id)+'-'+crypto.randomUUID()+'.pdf';await copy({source:{path:item.storagePath},destination:{path:dest}});
   createdId=item.fileHash||crypto.randomUUID();
+  documentCreateAttempted=true;
   const r=await client.models.Document.create({id:createdId,originalName:item.originalName,storagePath:dest,size:item.size,sectionId:item.sectionId,status:'published',pageCount:item.pageCount,title:item.title,author:item.author,fileHash:item.fileHash,processingStatus:item.processingStatus||'complete',publishedAt:new Date().toISOString(),currentVersion:1},{authMode:'userPool'});
   if(r.errors?.length||!r.data)throw new Error(r.errors?.[0]?.message||'The document could not be published.');
   if(item.fileHash){const lock=await client.models.HashReservation.update({id:item.fileHash,status:'published',documentId:createdId},{authMode:'userPool'});if(lock.errors?.length)throw new Error(lock.errors[0].message);reservationPublished=true;}
@@ -135,11 +139,16 @@ function AdminArea(){
   if(item.fileHash)newlyPublishedHashes.current.add(item.fileHash);await remove({path:item.storagePath}).catch(()=>undefined);await logAction('approve','Submission',item.id,'Approved '+item.originalName,{documentId:createdId}).catch(()=>undefined);setMessage('Published successfully.');await load().catch(()=>undefined);
  }catch(e){
   let ownedDocument=false;
+  let safeToRemoveDestination=!documentCreateAttempted;
   if(createdId){
    try{
     const check=await client.models.Document.get({id:createdId},{authMode:'userPool'});
-    ownedDocument=Boolean(check.data&&check.data.storagePath===dest&&check.data.fileHash===item.fileHash);
-   }catch{}
+    if(check.errors?.length){safeToRemoveDestination=false;}
+    else if(check.data){
+     ownedDocument=check.data.storagePath===dest&&check.data.fileHash===item.fileHash;
+     safeToRemoveDestination=!ownedDocument;
+    }else{safeToRemoveDestination=false;}
+   }catch{safeToRemoveDestination=false}
   }
   // Only roll back state when the published document points at this attempt's
   // unique destination. A same-hash document created by another admin is not ours.
@@ -150,13 +159,14 @@ function AdminArea(){
     const held=await client.models.HashReservation.get({id:item.fileHash},{authMode:'userPool'}).catch(()=>null);
     if(held?.data?.status==='published'&&held.data.documentId===createdId)await client.models.HashReservation.update({id:item.fileHash,status:'pending',documentId:null,submissionId:item.id},{authMode:'userPool'}).catch(()=>undefined);
    }
-   await client.models.Document.delete({id:createdId},{authMode:'userPool'}).catch(()=>undefined);
+   const deleted=await client.models.Document.delete({id:createdId},{authMode:'userPool'}).catch(()=>null);
+   if(!deleted||deleted.errors?.length)safeToRemoveDestination=false;else safeToRemoveDestination=true;
   }else if(reservationPublished&&item.fileHash){
    const held=await client.models.HashReservation.get({id:item.fileHash},{authMode:'userPool'}).catch(()=>null);
    if(held?.data?.status==='published'&&held.data.documentId===createdId)await client.models.HashReservation.update({id:item.fileHash,status:'pending',documentId:null,submissionId:item.id},{authMode:'userPool'}).catch(()=>undefined);
   }
-  if(dest)await remove({path:dest}).catch(()=>undefined);
-  setMessage(e instanceof Error?e.message:'Approval failed.');
+  if(dest&&safeToRemoveDestination)await remove({path:dest}).catch(()=>undefined);
+  setMessage(!safeToRemoveDestination?'Approval failed with an uncertain storage state. The destination file was preserved to avoid breaking a possibly committed document; inspect the document and hash reservation before retrying.':e instanceof Error?e.message:'Approval failed.');
  }finally{setBusy('')}
 }
  async function reject(item:Submission){
