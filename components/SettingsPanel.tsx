@@ -106,18 +106,21 @@ function Segmented({ value, options, onChange }: { value: string; options: Array
 
 export default function SettingsPanel({ onClose, onToast }: { onClose: () => void; onToast?: (message: string) => void }) {
   const [settings, setSettings] = useState<Settings>(defaults);
+  const [settingsReady, setSettingsReady] = useState(false);
   const [open, setOpen] = useState<string | null>("appearance");
 
   useEffect(() => {
     const saved = readSettings();
     setSettings(saved);
     applySettings(saved);
+    setSettingsReady(true);
   }, []);
 
   useEffect(() => {
+    if (!settingsReady) return;
     try { localStorage.setItem(KEY, JSON.stringify(settings)); } catch {}
     applySettings(settings);
-  }, [settings]);
+  }, [settings, settingsReady]);
 
   function patch<K extends keyof Settings>(key: K, value: Settings[K]) {
     setSettings(s => ({ ...s, [key]: value }));
