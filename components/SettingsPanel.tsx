@@ -106,24 +106,32 @@ function Segmented({ value, options, onChange }: { value: string; options: Array
 
 export default function SettingsPanel({ onClose, onToast }: { onClose: () => void; onToast?: (message: string) => void }) {
   const [settings, setSettings] = useState<Settings>(defaults);
+  const [settingsReady, setSettingsReady] = useState(false);
+  const [persistSettings, setPersistSettings] = useState(true);
   const [open, setOpen] = useState<string | null>("appearance");
 
   useEffect(() => {
     const saved = readSettings();
     setSettings(saved);
     applySettings(saved);
+    setSettingsReady(true);
   }, []);
 
   useEffect(() => {
-    try { localStorage.setItem(KEY, JSON.stringify(settings)); } catch {}
+    if (!settingsReady) return;
+    if (persistSettings) {
+      try { localStorage.setItem(KEY, JSON.stringify(settings)); } catch {}
+    }
     applySettings(settings);
-  }, [settings]);
+  }, [settings, settingsReady, persistSettings]);
 
   function patch<K extends keyof Settings>(key: K, value: Settings[K]) {
+    setPersistSettings(true);
     setSettings(s => ({ ...s, [key]: value }));
   }
 
   function reset() {
+    setPersistSettings(true);
     setSettings(defaults);
     onToast?.("Settings restored to defaults");
   }
@@ -133,6 +141,7 @@ export default function SettingsPanel({ onClose, onToast }: { onClose: () => voi
       localStorage.removeItem(KEY);
       localStorage.removeItem("paperdropl-search-history");
     } catch {}
+    setPersistSettings(false);
     setSettings(defaults);
     onToast?.("Local preferences cleared");
   }

@@ -53,10 +53,72 @@ function AdminArea(){
  function openDetail(item:Document|Submission){setDetail(item);setDetailUrl('');void focusedDetailUrl(item)}
  function qadd(files:FileList|File[]){const accepted:QItem[]=[];for(const f of Array.from(files)){if(f.type!=='application/pdf'&&!f.name.toLowerCase().endsWith('.pdf')){setMessage(f.name+': PDF only');continue}if(f.size>MAX){setMessage(f.name+': max 50 MB');continue}accepted.push({id:crypto.randomUUID(),file:f,sectionId:queueSection||sections[0]?.id||'',progress:0,status:'queued'})}if(accepted.length)setQueue(q=>[...q,...accepted])}
  function qpatch(id:string,p:Partial<QItem>){setQueue(q=>q.map(x=>x.id===id?{...x,...p}:x))}
- async function publishQueue(){if(busy||!queue.length)return;setBusy('queue');let count=0;const seenHashes=new Set<string>([...docs.map(d=>d.fileHash),...pending.map(s=>s.fileHash)].filter((x):x is string=>Boolean(x)));for(const item of queue.filter(x=>x.status==='queued'||x.status==='error')){if(!item.sectionId){qpatch(item.id,{status:'error',error:'Choose a section.'});continue}qpatch(item.id,{status:'uploading',progress:0,error:undefined});let path='';let reservedHash='';try{await assertPdfHeader(item.file);const h=await hashFile(item.file),m=await metaFile(item.file);if(seenHashes.has(h)){qpatch(item.id,{status:'error',error:'Duplicate file detected.'});continue}path='public/'+crypto.randomUUID()+'.pdf';await uploadData({path,data:item.file,options:{contentType:'application/pdf',onProgress:({transferredBytes,totalBytes})=>qpatch(item.id,{progress:Math.min(99,totalBytes?Math.round(transferredBytes/totalBytes*100):0)})}}).result;const lock=await client.models.HashReservation.create({id:h,status:"published",documentId:h},{authMode:"userPool"});if(lock.errors?.length||!lock.data)throw new Error("This PDF is already reserved, submitted, or published.");reservedHash=h;const r=await client.models.Document.create({id:h,originalName:item.file.name.slice(0,180),storagePath:path,size:item.file.size,sectionId:item.sectionId,status:'published',pageCount:m.pages,title:m.title,author:m.author,fileHash:h,processingStatus:'complete',publishedAt:new Date().toISOString(),currentVersion:1},{authMode:'userPool'});if(r.errors?.length)throw new Error(r.errors[0].message);reservedHash="";path="";seenHashes.add(h);await logAction('upload','Document',r.data?.id,item.file.name);qpatch(item.id,{status:'done',progress:100});count++}catch(e){if(reservedHash)await client.models.HashReservation.delete({id:reservedHash},{authMode:"userPool"}).catch(()=>undefined);if(path)await remove({path}).catch(()=>undefined);qpatch(item.id,{status:'error',error:e instanceof Error?e.message:'Upload failed.'})}}setBusy('');if(count){setMessage(count+' PDF'+(count>1?'s':'')+' published.');setQueue(q=>q.filter(x=>x.status!=='done'));await load()}}
+ async function publishQueue(){
+  if(busy||!queue.length)return;
+  setBusy('queue');
+  let count=0;
+  const seenHashes=new Set<string>([...docs.map(d=>d.fileHash),...pending.map(s=>s.fileHash)].filter((x):x is string=>Boolean(x)));
+  for(const item of queue.filter(x=>x.status==='queued'||x.status==='error')){
+   if(!item.sectionId){qpatch(item.id,{status:'error',error:'Choose a section.'});continue}
+   qpatch(item.id,{status:'uploading',progress:0,error:undefined});
+   let path='';
+   let hash='';
+   let documentCreateAttempted=false;
+   const reservationOwner=crypto.randomUUID();
+   try{
+    await assertPdfHeader(item.file);
+    hash=await hashFile(item.file);
+    const m=await metaFile(item.file);
+    if(seenHashes.has(hash)){qpatch(item.id,{status:'error',error:'Duplicate file detected.'});continue}
+    path='public/'+crypto.randomUUID()+'.pdf';
+    await uploadData({path,data:item.file,options:{contentType:'application/pdf',onProgress:({transferredBytes,totalBytes})=>qpatch(item.id,{progress:Math.min(99,totalBytes?Math.round(transferredBytes/totalBytes*100):0)})}}).result;
+    const lock=await client.models.HashReservation.create({id:hash,status:'pending',documentId:hash,submissionId:reservationOwner},{authMode:'userPool'});
+    if(lock.errors?.length||!lock.data)throw new Error(lock.errors?.[0]?.message||'This PDF is already reserved, submitted, or published.');
+     documentCreateAttempted=true;
+     const r=await client.models.Document.create({id:hash,originalName:item.file.name.slice(0,180),storagePath:path,size:item.file.size,sectionId:item.sectionId,status:'published',pageCount:m.pages,title:m.title,author:m.author,fileHash:hash,processingStatus:'complete',publishedAt:new Date().toISOString(),currentVersion:1},{authMode:'userPool'});
+    if(r.errors?.length||!r.data)throw new Error(r.errors?.[0]?.message||'The document could not be published.');
+    const promoted=await client.models.HashReservation.update({id:hash,status:'published',documentId:r.data.id,submissionId:null},{authMode:'userPool'});
+    if(promoted.errors?.length)throw new Error(promoted.errors[0].message);
+    path='';
+     seenHashes.add(hash);
+    await logAction('upload','Document',r.data.id,item.file.name);
+    qpatch(item.id,{status:'done',progress:100});
+    count++;
+   }catch(e){
+    let uncertain=false;
+    let heldReservation:any=null;
+    if(hash&&path){
+     try{
+      const check=await client.models.Document.get({id:hash},{authMode:'userPool'});
+      if(check.errors?.length)uncertain=true;
+      else if(!check.data&&documentCreateAttempted)uncertain=true;
+      else if(check.data?.storagePath===path&&check.data.fileHash===hash){
+       // The document write may have committed even if its response failed.
+       // Preserve both the object and reservation until an admin can reconcile it.
+       uncertain=true;
+      }
+     }catch{uncertain=true}
+    }
+    if(hash){
+     try{
+      heldReservation=await client.models.HashReservation.get({id:hash},{authMode:'userPool'});
+      if(heldReservation.errors?.length)uncertain=true;
+      else if(heldReservation.data?.status==='published'&&heldReservation.data.documentId===hash)uncertain=true;
+     }catch{uncertain=true}
+    }
+    if(!uncertain){
+     if(heldReservation?.data?.status==='pending'&&heldReservation.data.documentId===hash&&heldReservation.data.submissionId===reservationOwner)await client.models.HashReservation.delete({id:hash},{authMode:'userPool'}).catch(()=>undefined);
+     if(path)await remove({path}).catch(()=>undefined);
+    }
+    qpatch(item.id,{status:'error',error:uncertain?'Publication status is uncertain. The file and reservation were preserved; reload the library and check the document before retrying.':e instanceof Error?e.message:'Upload failed.'});
+   }
+  }
+  setBusy('');
+  if(count){setMessage(count+' PDF'+(count>1?'s':'')+' published.');setQueue(q=>q.filter(x=>x.status!=='done'));await load()}
+ }
  async function approve(item:Submission){
  if(item.fileHash&&(docs.some(d=>d.fileHash===item.fileHash)||newlyPublishedHashes.current.has(item.fileHash))){setMessage('This PDF matches an existing or just-published document. Reject this duplicate instead.');return}
- setBusy(item.id);let dest='';let createdId:string|undefined;let reservationPublished=false;let submissionApproved=false;
+ setBusy(item.id);let dest='';let createdId:string|undefined;let documentCreateAttempted=false;let reservationPublished=false;let submissionApproved=false;
  try{
   if(item.fileHash){
    const existing=await client.models.HashReservation.get({id:item.fileHash},{authMode:'userPool'});
@@ -68,24 +130,55 @@ function AdminArea(){
    }
   }
   dest='public/'+(item.fileHash||item.id)+'-'+crypto.randomUUID()+'.pdf';await copy({source:{path:item.storagePath},destination:{path:dest}});
-  const r=await client.models.Document.create({id:item.fileHash||crypto.randomUUID(),originalName:item.originalName,storagePath:dest,size:item.size,sectionId:item.sectionId,status:'published',pageCount:item.pageCount,title:item.title,author:item.author,fileHash:item.fileHash,processingStatus:item.processingStatus||'complete',publishedAt:new Date().toISOString(),currentVersion:1},{authMode:'userPool'});
-  if(r.errors?.length||!r.data)throw new Error(r.errors?.[0]?.message||'The document could not be published.');createdId=r.data.id;
+  createdId=item.fileHash||crypto.randomUUID();
+  documentCreateAttempted=true;
+  const r=await client.models.Document.create({id:createdId,originalName:item.originalName,storagePath:dest,size:item.size,sectionId:item.sectionId,status:'published',pageCount:item.pageCount,title:item.title,author:item.author,fileHash:item.fileHash,processingStatus:item.processingStatus||'complete',publishedAt:new Date().toISOString(),currentVersion:1},{authMode:'userPool'});
+  if(r.errors?.length||!r.data)throw new Error(r.errors?.[0]?.message||'The document could not be published.');
   if(item.fileHash){const lock=await client.models.HashReservation.update({id:item.fileHash,status:'published',documentId:createdId},{authMode:'userPool'});if(lock.errors?.length)throw new Error(lock.errors[0].message);reservationPublished=true;}
   const u=await client.models.Submission.update({id:item.id,status:'approved'},{authMode:'userPool'});if(u.errors?.length)throw new Error(u.errors[0].message);submissionApproved=true;
   if(item.fileHash)newlyPublishedHashes.current.add(item.fileHash);await remove({path:item.storagePath}).catch(()=>undefined);await logAction('approve','Submission',item.id,'Approved '+item.originalName,{documentId:createdId}).catch(()=>undefined);setMessage('Published successfully.');await load().catch(()=>undefined);
  }catch(e){
-  if(submissionApproved)await client.models.Submission.update({id:item.id,status:'pending'},{authMode:'userPool'}).catch(()=>undefined);
-  if(reservationPublished&&item.fileHash)await client.models.HashReservation.update({id:item.fileHash,status:'pending',documentId:null,submissionId:item.id},{authMode:'userPool'}).catch(()=>undefined);
-  let winnerExists=false;
+  let ownedDocument=false;
+  let safeToRemoveDestination=!documentCreateAttempted;
   if(createdId){
    try{
     const check=await client.models.Document.get({id:createdId},{authMode:'userPool'});
-    winnerExists=Boolean(check.data);
-   }catch{}
-   if(!winnerExists)await client.models.Document.delete({id:createdId},{authMode:'userPool'}).catch(()=>undefined);
+    if(check.errors?.length){safeToRemoveDestination=false;}
+    else if(check.data){
+     ownedDocument=check.data.storagePath===dest&&check.data.fileHash===item.fileHash;
+     safeToRemoveDestination=!ownedDocument;
+    }else{safeToRemoveDestination=false;}
+   }catch{safeToRemoveDestination=false}
   }
-  if(dest&&!winnerExists)await remove({path:dest}).catch(()=>undefined);
-  setMessage(e instanceof Error?e.message:'Approval failed.');
+  // Only roll back state when the published document points at this attempt's
+  // unique destination. A same-hash document created by another admin is not ours.
+  if(ownedDocument){
+   let rollbackComplete=true;
+   const currentSubmission=await client.models.Submission.get({id:item.id},{authMode:'userPool'}).catch(()=>null);
+   if(!currentSubmission||currentSubmission.errors?.length||!currentSubmission.data)rollbackComplete=false;
+   else if(submissionApproved||currentSubmission.data.status==='approved'){
+    const resetSubmission=await client.models.Submission.update({id:item.id,status:'pending'},{authMode:'userPool'}).catch(()=>null);
+    if(!resetSubmission||resetSubmission.errors?.length)rollbackComplete=false;
+   }
+   if(item.fileHash){
+    const held=await client.models.HashReservation.get({id:item.fileHash},{authMode:'userPool'}).catch(()=>null);
+    if(!held||held.errors?.length)rollbackComplete=false;
+    else if(held.data?.status==='published'&&held.data.documentId===createdId){
+     const resetReservation=await client.models.HashReservation.update({id:item.fileHash,status:'pending',documentId:null,submissionId:item.id},{authMode:'userPool'}).catch(()=>null);
+     if(!resetReservation||resetReservation.errors?.length)rollbackComplete=false;
+    }else if(!(held.data?.status==='pending'&&held.data.submissionId===item.id))rollbackComplete=false;
+   }
+   if(rollbackComplete){
+    const deleted=await client.models.Document.delete({id:createdId},{authMode:'userPool'}).catch(()=>null);
+    if(!deleted||deleted.errors?.length)rollbackComplete=false;
+   }
+   safeToRemoveDestination=rollbackComplete;
+  }else if(reservationPublished&&item.fileHash){
+   const held=await client.models.HashReservation.get({id:item.fileHash},{authMode:'userPool'}).catch(()=>null);
+   if(held?.data?.status==='published'&&held.data.documentId===createdId)await client.models.HashReservation.update({id:item.fileHash,status:'pending',documentId:null,submissionId:item.id},{authMode:'userPool'}).catch(()=>undefined);
+  }
+  if(dest&&safeToRemoveDestination)await remove({path:dest}).catch(()=>undefined);
+  setMessage(!safeToRemoveDestination?'Approval failed with an uncertain storage state. The destination file was preserved to avoid breaking a possibly committed document; inspect the document and hash reservation before retrying.':e instanceof Error?e.message:'Approval failed.');
  }finally{setBusy('')}
 }
  async function reject(item:Submission){

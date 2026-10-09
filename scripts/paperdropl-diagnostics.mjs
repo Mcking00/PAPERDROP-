@@ -99,11 +99,21 @@ check("package.json validation", () => {
   return true;
 });
 
-check("package-lock.json integrity", () => {
+check("package-lock.json integrity and dependency parity", () => {
   if (!exists("package-lock.json")) return "package-lock.json is missing";
-  JSON.parse(fs.readFileSync(path.join(root, "package-lock.json"), "utf8"));
+  const manifest = JSON.parse(fs.readFileSync(path.join(root, "package.json"), "utf8"));
+  const lock = JSON.parse(fs.readFileSync(path.join(root, "package-lock.json"), "utf8"));
+  const lockedRoot = lock.packages?.[""];
+  if (!lockedRoot) return "package-lock.json has no root package metadata";
+  for (const field of ["dependencies", "devDependencies", "optionalDependencies", "engines"]) {
+    const current = Object.entries(manifest[field] ?? {}).sort(([a], [b]) => a.localeCompare(b));
+    const locked = Object.entries(lockedRoot[field] ?? {}).sort(([a], [b]) => a.localeCompare(b));
+    if (JSON.stringify(current) !== JSON.stringify(locked)) {
+      return `package.json and package-lock.json disagree in "${field}"`;
+    }
+  }
   return true;
-}, "WARN");
+});
 
 check("installed dependency tree", () => {
   const r = run("npm", ["ls", "--depth=0", "--ignore-scripts"]);
