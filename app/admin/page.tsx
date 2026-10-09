@@ -169,7 +169,8 @@ function AdminArea(){
     }else if(!(held.data?.status==='pending'&&held.data.submissionId===item.id))rollbackComplete=false;
    }
    if(rollbackComplete){
-    const deleted=await client.models.Document.delete({id:createdId},{authMode:'userPool'}).catch(()=>null);
+    const rollbackDocumentId=createdId;
+    const deleted=await client.models.Document.delete({id:rollbackDocumentId},{authMode:'userPool'}).catch(()=>null);
     if(!deleted||deleted.errors?.length)rollbackComplete=false;
    }
    safeToRemoveDestination=rollbackComplete;
