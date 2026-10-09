@@ -169,9 +169,12 @@ function AdminArea(){
     }else if(!(held.data?.status==='pending'&&held.data.submissionId===item.id))rollbackComplete=false;
    }
    if(rollbackComplete){
-    const rollbackDocumentId=createdId;
-    const deleted=await client.models.Document.delete({id:rollbackDocumentId},{authMode:'userPool'}).catch(()=>null);
-    if(!deleted||deleted.errors?.length)rollbackComplete=false;
+    if(createdId){
+     const deleted=await client.models.Document.delete({id:createdId},{authMode:'userPool'}).catch(()=>null);
+     if(!deleted||deleted.errors?.length)rollbackComplete=false;
+    }else{
+     rollbackComplete=false;
+    }
    }
    safeToRemoveDestination=rollbackComplete;
   }else if(reservationPublished&&item.fileHash){
