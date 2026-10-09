@@ -63,8 +63,7 @@ function AdminArea(){
    qpatch(item.id,{status:'uploading',progress:0,error:undefined});
    let path='';
    let hash='';
-   let reservationCreated=false;
-   const reservationOwner=crypto.randomUUID();
+    const reservationOwner=crypto.randomUUID();
    try{
     await assertPdfHeader(item.file);
     hash=await hashFile(item.file);
@@ -74,14 +73,12 @@ function AdminArea(){
     await uploadData({path,data:item.file,options:{contentType:'application/pdf',onProgress:({transferredBytes,totalBytes})=>qpatch(item.id,{progress:Math.min(99,totalBytes?Math.round(transferredBytes/totalBytes*100):0)})}}).result;
     const lock=await client.models.HashReservation.create({id:hash,status:'pending',documentId:hash,submissionId:reservationOwner},{authMode:'userPool'});
     if(lock.errors?.length||!lock.data)throw new Error(lock.errors?.[0]?.message||'This PDF is already reserved, submitted, or published.');
-    reservationCreated=true;
-    const r=await client.models.Document.create({id:hash,originalName:item.file.name.slice(0,180),storagePath:path,size:item.file.size,sectionId:item.sectionId,status:'published',pageCount:m.pages,title:m.title,author:m.author,fileHash:hash,processingStatus:'complete',publishedAt:new Date().toISOString(),currentVersion:1},{authMode:'userPool'});
+     const r=await client.models.Document.create({id:hash,originalName:item.file.name.slice(0,180),storagePath:path,size:item.file.size,sectionId:item.sectionId,status:'published',pageCount:m.pages,title:m.title,author:m.author,fileHash:hash,processingStatus:'complete',publishedAt:new Date().toISOString(),currentVersion:1},{authMode:'userPool'});
     if(r.errors?.length||!r.data)throw new Error(r.errors?.[0]?.message||'The document could not be published.');
     const promoted=await client.models.HashReservation.update({id:hash,status:'published',documentId:r.data.id,submissionId:null},{authMode:'userPool'});
     if(promoted.errors?.length)throw new Error(promoted.errors[0].message);
     path='';
-    reservationCreated=false;
-    seenHashes.add(hash);
+     seenHashes.add(hash);
     await logAction('upload','Document',r.data.id,item.file.name);
     qpatch(item.id,{status:'done',progress:100});
     count++;
