@@ -153,14 +153,26 @@ function AdminArea(){
   // Only roll back state when the published document points at this attempt's
   // unique destination. A same-hash document created by another admin is not ours.
   if(ownedDocument){
+   let rollbackComplete=true;
    const currentSubmission=await client.models.Submission.get({id:item.id},{authMode:'userPool'}).catch(()=>null);
-   if(submissionApproved||currentSubmission?.data?.status==='approved')await client.models.Submission.update({id:item.id,status:'pending'},{authMode:'userPool'}).catch(()=>undefined);
+   if(!currentSubmission||currentSubmission.errors?.length||!currentSubmission.data)rollbackComplete=false;
+   else if(submissionApproved||currentSubmission.data.status==='approved'){
+    const resetSubmission=await client.models.Submission.update({id:item.id,status:'pending'},{authMode:'userPool'}).catch(()=>null);
+    if(!resetSubmission||resetSubmission.errors?.length)rollbackComplete=false;
+   }
    if(item.fileHash){
     const held=await client.models.HashReservation.get({id:item.fileHash},{authMode:'userPool'}).catch(()=>null);
-    if(held?.data?.status==='published'&&held.data.documentId===createdId)await client.models.HashReservation.update({id:item.fileHash,status:'pending',documentId:null,submissionId:item.id},{authMode:'userPool'}).catch(()=>undefined);
+    if(!held||held.errors?.length)rollbackComplete=false;
+    else if(held.data?.status==='published'&&held.data.documentId===createdId){
+     const resetReservation=await client.models.HashReservation.update({id:item.fileHash,status:'pending',documentId:null,submissionId:item.id},{authMode:'userPool'}).catch(()=>null);
+     if(!resetReservation||resetReservation.errors?.length)rollbackComplete=false;
+    }else if(!(held.data?.status==='pending'&&held.data.submissionId===item.id))rollbackComplete=false;
    }
-   const deleted=await client.models.Document.delete({id:createdId},{authMode:'userPool'}).catch(()=>null);
-   if(!deleted||deleted.errors?.length)safeToRemoveDestination=false;else safeToRemoveDestination=true;
+   if(rollbackComplete){
+    const deleted=await client.models.Document.delete({id:createdId},{authMode:'userPool'}).catch(()=>null);
+    if(!deleted||deleted.errors?.length)rollbackComplete=false;
+   }
+   safeToRemoveDestination=rollbackComplete;
   }else if(reservationPublished&&item.fileHash){
    const held=await client.models.HashReservation.get({id:item.fileHash},{authMode:'userPool'}).catch(()=>null);
    if(held?.data?.status==='published'&&held.data.documentId===createdId)await client.models.HashReservation.update({id:item.fileHash,status:'pending',documentId:null,submissionId:item.id},{authMode:'userPool'}).catch(()=>undefined);
