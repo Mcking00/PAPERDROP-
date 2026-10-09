@@ -68,23 +68,35 @@ function AdminArea(){
    }
   }
   dest='public/'+(item.fileHash||item.id)+'-'+crypto.randomUUID()+'.pdf';await copy({source:{path:item.storagePath},destination:{path:dest}});
-  const r=await client.models.Document.create({id:item.fileHash||crypto.randomUUID(),originalName:item.originalName,storagePath:dest,size:item.size,sectionId:item.sectionId,status:'published',pageCount:item.pageCount,title:item.title,author:item.author,fileHash:item.fileHash,processingStatus:item.processingStatus||'complete',publishedAt:new Date().toISOString(),currentVersion:1},{authMode:'userPool'});
-  if(r.errors?.length||!r.data)throw new Error(r.errors?.[0]?.message||'The document could not be published.');createdId=r.data.id;
+  createdId=item.fileHash||crypto.randomUUID();
+  const r=await client.models.Document.create({id:createdId,originalName:item.originalName,storagePath:dest,size:item.size,sectionId:item.sectionId,status:'published',pageCount:item.pageCount,title:item.title,author:item.author,fileHash:item.fileHash,processingStatus:item.processingStatus||'complete',publishedAt:new Date().toISOString(),currentVersion:1},{authMode:'userPool'});
+  if(r.errors?.length||!r.data)throw new Error(r.errors?.[0]?.message||'The document could not be published.');
   if(item.fileHash){const lock=await client.models.HashReservation.update({id:item.fileHash,status:'published',documentId:createdId},{authMode:'userPool'});if(lock.errors?.length)throw new Error(lock.errors[0].message);reservationPublished=true;}
   const u=await client.models.Submission.update({id:item.id,status:'approved'},{authMode:'userPool'});if(u.errors?.length)throw new Error(u.errors[0].message);submissionApproved=true;
   if(item.fileHash)newlyPublishedHashes.current.add(item.fileHash);await remove({path:item.storagePath}).catch(()=>undefined);await logAction('approve','Submission',item.id,'Approved '+item.originalName,{documentId:createdId}).catch(()=>undefined);setMessage('Published successfully.');await load().catch(()=>undefined);
  }catch(e){
-  if(submissionApproved)await client.models.Submission.update({id:item.id,status:'pending'},{authMode:'userPool'}).catch(()=>undefined);
-  if(reservationPublished&&item.fileHash)await client.models.HashReservation.update({id:item.fileHash,status:'pending',documentId:null,submissionId:item.id},{authMode:'userPool'}).catch(()=>undefined);
-  let winnerExists=false;
+  let ownedDocument=false;
   if(createdId){
    try{
     const check=await client.models.Document.get({id:createdId},{authMode:'userPool'});
-    winnerExists=Boolean(check.data);
+    ownedDocument=Boolean(check.data&&check.data.storagePath===dest&&check.data.fileHash===item.fileHash);
    }catch{}
-   if(!winnerExists)await client.models.Document.delete({id:createdId},{authMode:'userPool'}).catch(()=>undefined);
   }
-  if(dest&&!winnerExists)await remove({path:dest}).catch(()=>undefined);
+  // Only roll back state when the published document points at this attempt's
+  // unique destination. A same-hash document created by another admin is not ours.
+  if(ownedDocument){
+   const currentSubmission=await client.models.Submission.get({id:item.id},{authMode:'userPool'}).catch(()=>null);
+   if(submissionApproved||currentSubmission?.data?.status==='approved')await client.models.Submission.update({id:item.id,status:'pending'},{authMode:'userPool'}).catch(()=>undefined);
+   if(item.fileHash){
+    const held=await client.models.HashReservation.get({id:item.fileHash},{authMode:'userPool'}).catch(()=>null);
+    if(held?.data?.status==='published'&&held.data.documentId===createdId)await client.models.HashReservation.update({id:item.fileHash,status:'pending',documentId:null,submissionId:item.id},{authMode:'userPool'}).catch(()=>undefined);
+   }
+   await client.models.Document.delete({id:createdId},{authMode:'userPool'}).catch(()=>undefined);
+  }else if(reservationPublished&&item.fileHash){
+   const held=await client.models.HashReservation.get({id:item.fileHash},{authMode:'userPool'}).catch(()=>null);
+   if(held?.data?.status==='published'&&held.data.documentId===createdId)await client.models.HashReservation.update({id:item.fileHash,status:'pending',documentId:null,submissionId:item.id},{authMode:'userPool'}).catch(()=>undefined);
+  }
+  if(dest)await remove({path:dest}).catch(()=>undefined);
   setMessage(e instanceof Error?e.message:'Approval failed.');
  }finally{setBusy('')}
 }
