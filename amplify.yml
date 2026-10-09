@@ -3,12 +3,8 @@ backend:
   phases:
     build:
       commands:
-        - nvm use 22
-        - npm install --package-lock-only --ignore-scripts --no-audit --no-fund
-        - npm ci --cache .npm --prefer-offline --no-audit --no-fund
-        - npx ampx pipeline-deploy --branch "$AWS_BRANCH" --app-id "$AWS_APP_ID"
-        - npx ampx generate outputs --branch "$AWS_BRANCH" --app-id "$AWS_APP_ID"
-        - node scripts/paperdropl-diagnostics.mjs
+        - nvm use 22 || echo "PAPERDROPL could not switch Node versions; continuing with the current Node runtime"
+        - node scripts/paperdropl-amplify-build.mjs
 frontend:
   phases:
     build:
