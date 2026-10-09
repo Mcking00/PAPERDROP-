@@ -85,8 +85,26 @@ export const handler = async (event: { arguments: { originalName: string; storag
     if (result.data) return true;
     throw new Error(result.errors?.[0]?.message ?? "The submission could not be saved.");
   } catch (error) {
-    const released = await models.HashReservation.delete({ id: fileHash });
-    if (released.errors?.length) throw new Error("The submission failed and its hash reservation could not be released.");
+    // A timed-out/ambiguous create may have persisted despite returning an error.
+    // Keep the reservation whenever a matching submission exists; otherwise a
+    // second upload could claim the same hash while the first submission is live.
+    const saved = await models.Submission.get({ id: submissionId });
+    if (saved.errors?.length) {
+      throw new Error("Submission status is uncertain; the hash reservation was retained for safety.");
+    }
+    if (saved.data) {
+      if (saved.data.fileHash === fileHash && saved.data.storagePath === storagePath) return true;
+      throw new Error("A submission record exists but does not match this upload; its hash reservation was retained.");
+    }
+
+    const held = await models.HashReservation.get({ id: fileHash });
+    if (held.errors?.length) {
+      throw new Error("The submission failed and its hash reservation could not be safely checked.");
+    }
+    if (held.data?.submissionId === submissionId && held.data.status === "pending") {
+      const released = await models.HashReservation.delete({ id: fileHash });
+      if (released.errors?.length) throw new Error("The submission failed and its hash reservation could not be released.");
+    }
     throw error;
   }
 };
