@@ -84,6 +84,7 @@ function AdminArea(){
     count++;
    }catch(e){
     let uncertain=false;
+    let heldReservation:any=null;
     if(hash&&path){
      try{
       const check=await client.models.Document.get({id:hash},{authMode:'userPool'});
@@ -95,11 +96,15 @@ function AdminArea(){
       }
      }catch{uncertain=true}
     }
+    if(hash){
+     try{
+      heldReservation=await client.models.HashReservation.get({id:hash},{authMode:'userPool'});
+      if(heldReservation.errors?.length)uncertain=true;
+      else if(heldReservation.data?.status==='published'&&heldReservation.data.documentId===hash)uncertain=true;
+     }catch{uncertain=true}
+    }
     if(!uncertain){
-     if(hash){
-      const held=await client.models.HashReservation.get({id:hash},{authMode:'userPool'}).catch(()=>null);
-      if(held?.data?.status==='pending'&&held.data.documentId===hash&&held.data.submissionId===reservationOwner)await client.models.HashReservation.delete({id:hash},{authMode:'userPool'}).catch(()=>undefined);
-     }
+     if(heldReservation?.data?.status==='pending'&&heldReservation.data.documentId===hash&&heldReservation.data.submissionId===reservationOwner)await client.models.HashReservation.delete({id:hash},{authMode:'userPool'}).catch(()=>undefined);
      if(path)await remove({path}).catch(()=>undefined);
     }
     qpatch(item.id,{status:'error',error:uncertain?'Publication status is uncertain. The file and reservation were preserved; reload the library and check the document before retrying.':e instanceof Error?e.message:'Upload failed.'});
