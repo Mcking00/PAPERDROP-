@@ -96,7 +96,7 @@ function AdminArea(){
      }catch{uncertain=true}
     }
     if(!uncertain){
-     if(hash&&reservationCreated){
+     if(hash){
       const held=await client.models.HashReservation.get({id:hash},{authMode:'userPool'}).catch(()=>null);
       if(held?.data?.status==='pending'&&held.data.documentId===hash&&held.data.submissionId===reservationOwner)await client.models.HashReservation.delete({id:hash},{authMode:'userPool'}).catch(()=>undefined);
      }
