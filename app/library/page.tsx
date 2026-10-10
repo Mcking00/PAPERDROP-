@@ -1,3 +1,5 @@
-"use client";
+import { redirect } from "next/navigation";
 
-export default function Library(){return <main className="pd-page"><div style={{padding:40,color:"white"}}>PaperDROPL upgraded library booting…</div></main>}
+export default function Library() {
+  redirect("/#library");
+}

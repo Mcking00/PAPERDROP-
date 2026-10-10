@@ -1,4 +1,5 @@
 import { defineStorage } from "@aws-amplify/backend";
+import { submitPdfForReview } from "../functions/submit-pdf-for-review/resource";
 
 export const storage = defineStorage({
   name: "paperDropFiles",
@@ -6,6 +7,7 @@ export const storage = defineStorage({
     "pending/*": [
       allow.guest.to(["write"]),
       allow.groups(["ADMINS"]).to(["read", "write", "delete"]),
+      allow.resource(submitPdfForReview).to(["read"]),
     ],
     "public/*": [
       allow.guest.to(["read"]),
