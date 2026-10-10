@@ -2994,6 +2994,151 @@ html[data-pd-accent] .pd-update-meta b.new {
   background: rgba(var(--pd-accent-rgb), 0.14);
   border-color: rgba(var(--pd-accent-rgb), 0.28);
 }
+/* PaperDrop onboarding action cards */
+.pd-hero-tips {
+  position: relative;
+  z-index: 10;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+  width: min(820px, calc(100% - 48px));
+  margin: 0 auto 28px;
+}
+
+.pd-hero-tip {
+  position: relative;
+  display: grid;
+  grid-template-columns: 42px minmax(0, 1fr) 34px;
+  align-items: center;
+  gap: 14px;
+  min-height: 104px;
+  padding: 16px 18px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.11);
+  border-radius: 18px;
+  background: linear-gradient(135deg, rgba(18, 24, 48, 0.94), rgba(9, 13, 30, 0.88));
+  box-shadow: 0 12px 34px rgba(0, 0, 0, 0.2);
+  color: #f2f4ff;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  backdrop-filter: blur(16px);
+  transition: transform 180ms ease, border-color 180ms ease, box-shadow 180ms ease;
+}
+
+.pd-hero-tip::before {
+  position: absolute;
+  inset: 16px auto 16px 0;
+  width: 2px;
+  border-radius: 2px;
+  background: linear-gradient(transparent, var(--pd-accent, #8f82ff), transparent);
+  content: "";
+  opacity: 0.9;
+}
+
+.pd-hero-tip:hover {
+  transform: translateY(-3px);
+  border-color: rgba(var(--pd-accent-rgb, 143, 130, 255), 0.5);
+  box-shadow: 0 16px 38px rgba(0, 0, 0, 0.25), 0 0 28px rgba(var(--pd-accent-rgb, 143, 130, 255), 0.1);
+}
+
+.pd-hero-tip:focus-visible {
+  outline: 2px solid var(--pd-accent, #8f82ff);
+  outline-offset: 3px;
+}
+
+.pd-hero-tip-number {
+  display: grid;
+  width: 42px;
+  height: 42px;
+  place-items: center;
+  border: 1px solid rgba(var(--pd-accent-rgb, 143, 130, 255), 0.25);
+  border-radius: 13px;
+  background: rgba(var(--pd-accent-rgb, 143, 130, 255), 0.1);
+  color: var(--pd-accent-text, #b9b0ff);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+}
+
+.pd-hero-tip-copy {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.pd-hero-tip-kicker {
+  color: var(--pd-accent-text, #b9b0ff);
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.13em;
+}
+
+.pd-hero-tip-copy strong {
+  color: inherit;
+  font-size: 16px;
+  line-height: 1.2;
+}
+
+.pd-hero-tip-copy > span:last-child {
+  color: #9da7c1;
+  font-size: 11px;
+  line-height: 1.45;
+}
+
+.pd-hero-tip-arrow {
+  display: grid;
+  width: 32px;
+  height: 32px;
+  place-items: center;
+  border: 1px solid rgba(var(--pd-accent-rgb, 143, 130, 255), 0.2);
+  border-radius: 50%;
+  color: var(--pd-accent-text, #b9b0ff);
+  font-size: 17px;
+  transition: transform 180ms ease, background 180ms ease;
+}
+
+.pd-hero-tip:hover .pd-hero-tip-arrow {
+  transform: translate(2px, -2px);
+  background: rgba(var(--pd-accent-rgb, 143, 130, 255), 0.12);
+}
+
+html[data-pd-theme="light"] .pd-hero-tip {
+  border-color: rgba(31, 48, 80, 0.13);
+  background: rgba(255, 255, 255, 0.93);
+  box-shadow: 0 12px 30px rgba(32, 47, 78, 0.08);
+  color: #172038;
+}
+
+html[data-pd-theme="light"] .pd-hero-tip-copy > span:last-child {
+  color: #5b6680;
+}
+
+@media (max-width: 700px) {
+  .pd-hero-tips {
+    grid-template-columns: 1fr;
+    gap: 10px;
+    width: calc(100% - 28px);
+    margin: 0 auto 22px;
+  }
+
+  .pd-hero-tip {
+    min-height: 88px;
+    padding: 13px 15px;
+  }
+
+  .pd-hero-tip-copy strong {
+    font-size: 15px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pd-hero-tip,
+  .pd-hero-tip-arrow {
+    transition: none;
+  }
+}
+
 /* Anchor mobile scenery to the largest viewport so browser chrome changes cannot rescale it. */
 @media (max-width: 700px) {
   .pd-page {
@@ -3146,4 +3291,42 @@ html[data-pd-accent] .pd-bottom-nav button:hover {
     margin-top: 12px;
     font-size: 12px;
   }
+}
+
+/* Keep the desktop scenery filling the whole viewport while mobile uses a stable viewport height. */
+@media (min-width: 701px) {
+  .pd-page::before {
+    background-size: 100% 100% !important;
+    background-position: center center !important;
+    background-repeat: no-repeat !important;
+  }
+}
+
+@media (max-width: 700px) {
+  .pd-page {
+    min-height: 100svh !important;
+  }
+
+  .pd-page::before {
+    background-size: auto 100lvh !important;
+    background-position: center top !important;
+  }
+}
+
+/* The section beneath the PaperDrop idea should read as a solid panel in every theme. */
+#features.pd-features {
+  background: #0a0f1d !important;
+  border-color: rgba(var(--pd-accent-rgb, 143, 130, 255), 0.22) !important;
+}
+
+html[data-pd-theme="light"] #features.pd-features {
+  background: #ffffff !important;
+  border-color: rgba(31, 48, 80, 0.13) !important;
+  color: #172038 !important;
+}
+
+html[data-pd-theme="amoled"] #features.pd-features {
+  background: #000000 !important;
+  border-color: rgba(255, 255, 255, 0.12) !important;
+  color: #f3f5ff !important;
 }
