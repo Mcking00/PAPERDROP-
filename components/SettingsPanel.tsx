@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { ReactNode } from "react";
 
 type Settings = {
@@ -58,10 +58,34 @@ const defaults: Settings = {
   language: "english"
 };
 
+const settingOptions: Partial<Record<keyof Settings, readonly string[]>> = {
+  theme: ["dark", "amoled", "light"],
+  accent: ["violet", "cyan", "rose", "green"],
+  motion: ["full", "reduced", "off"],
+  libraryView: ["grid", "list"],
+  cardDensity: ["comfortable", "compact"],
+  sort: ["relevance", "newest", "az"],
+  textSize: ["normal", "large", "xlarge"],
+  language: ["english", "hinglish"],
+};
+
 function readSettings(): Settings {
   try {
     const raw = localStorage.getItem(KEY);
-    return raw ? { ...defaults, ...JSON.parse(raw) } : defaults;
+    if (!raw) return defaults;
+    const parsed: unknown = JSON.parse(raw);
+    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) return defaults;
+    const saved = parsed as Record<string, unknown>;
+    const result = { ...defaults };
+    for (const key of Object.keys(defaults) as Array<keyof Settings>) {
+      const value = saved[key];
+      const fallback = defaults[key];
+      if (typeof value !== typeof fallback) continue;
+      const options = settingOptions[key];
+      if (typeof value === "string" && options && !options.includes(value)) continue;
+      Object.assign(result, { [key]: value });
+    }
+    return result;
   } catch {
     return defaults;
   }
@@ -101,7 +125,7 @@ function Toggle({ value, onChange, label }: { value: boolean; onChange: (v: bool
 }
 
 function Segmented({ value, options, onChange }: { value: string; options: Array<[string, string]>; onChange: (v: string) => void }) {
-  return <div className="pd-segmented">{options.map(([id, label]) => <button key={id} type="button" className={value === id ? "is-active" : ""} onClick={() => onChange(id)}>{label}</button>)}</div>;
+  return <div className="pd-segmented">{options.map(([id, label]) => <button key={id} type="button" className={value === id ? "is-active" : ""} aria-pressed={value === id} onClick={() => onChange(id)}>{label}</button>)}</div>;
 }
 
 export default function SettingsPanel({ onClose, onToast }: { onClose: () => void; onToast?: (message: string) => void }) {
@@ -109,6 +133,47 @@ export default function SettingsPanel({ onClose, onToast }: { onClose: () => voi
   const [settingsReady, setSettingsReady] = useState(false);
   const [persistSettings, setPersistSettings] = useState(true);
   const [open, setOpen] = useState<string | null>("appearance");
+  const panelRef = useRef<HTMLElementTagNameMap["aside"]>(null);
+  const onCloseRef = useRef(onClose);
+  onCloseRef.current = onClose;
+
+  useEffect(() => {
+    const previousFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    const previousOverflow = document.body.style.overflow;
+    const panel = panelRef.current;
+    const selector = 'button:not([disabled]), a[href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+    document.body.style.overflow = "hidden";
+    const focusable = Array.from(panel?.querySelectorAll<HTMLElement>(selector) ?? []);
+    (focusable[0] ?? panel)?.focus();
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        event.stopPropagation();
+        onCloseRef.current();
+        return;
+      }
+      if (event.key !== "Tab" || !panel) return;
+      const items = Array.from(panel.querySelectorAll<HTMLElement>(selector));
+      if (!items.length) {
+        event.preventDefault();
+        panel.focus();
+      } else if (event.shiftKey && document.activeElement === items[0]) {
+        event.preventDefault();
+        items[items.length - 1].focus();
+      } else if (!event.shiftKey && document.activeElement === items[items.length - 1]) {
+        event.preventDefault();
+        items[0].focus();
+      }
+    };
+
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+      document.body.style.overflow = previousOverflow;
+      previousFocus?.focus({ preventScroll: true });
+    };
+  }, []);
 
   useEffect(() => {
     const saved = readSettings();
@@ -155,11 +220,11 @@ export default function SettingsPanel({ onClose, onToast }: { onClose: () => voi
     </section>
   );
 
-  return <div className="pd-settings-shell" role="dialog" aria-modal="true" aria-label="PAPERDROP settings">
+  return <div className="pd-settings-shell" role="dialog" aria-modal="true" aria-labelledby="pd-settings-title">
     <div className="pd-settings-backdrop" onClick={onClose} />
-    <aside className="pd-settings-panel">
+    <aside ref={panelRef} tabIndex={-1} className="pd-settings-panel">
       <header className="pd-settings-titlebar">
-        <div><span className="pd-kicker">PERSONALIZE</span><h2>PAPERDROP settings</h2><p>Your preferences stay on this device.</p></div>
+        <div><span className="pd-kicker">PERSONALIZE</span><h2 id="pd-settings-title">PAPERDROP settings</h2><p>Your preferences stay on this device.</p></div>
         <button type="button" className="pd-settings-close" onClick={onClose} aria-label="Close settings">×</button>
       </header>
 
