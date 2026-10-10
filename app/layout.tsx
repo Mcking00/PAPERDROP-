@@ -34,7 +34,6 @@ export default function RootLayout({
               root.classList.toggle('pd-performance-mode', s.performance === true);
               root.classList.toggle('pd-animated-background', s.animatedBackground !== false && s.performance !== true);
               root.classList.toggle('pd-smooth-scroll', s.smoothScroll !== false && s.motion !== 'off');
-              root.classList.toggle('pd-high-contrast', s.highContrast === true);
               root.dataset.pdTheme = s.theme || 'dark';
               root.dataset.pdAccent = s.accent || 'violet';
               root.dataset.pdMotion = s.motion || 'full';
@@ -44,7 +43,6 @@ export default function RootLayout({
               root.dataset.pdLibraryView = s.libraryView || 'grid';
               root.dataset.pdCardDensity = s.cardDensity || 'comfortable';
               root.dataset.pdDescriptions = String(s.descriptions !== false);
-              root.lang = s.language === 'hinglish' ? 'en-IN' : 'en';
             } catch {
               document.documentElement.classList.add('pd-anime-background', 'pd-animated-background');
             }

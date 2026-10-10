@@ -22,8 +22,6 @@ type Settings = {
   restoreDrafts: boolean;
   uploadNotifications: boolean;
   textSize: "normal" | "large" | "xlarge";
-  highContrast: boolean;
-  language: "english" | "hinglish";
 };
 
 const KEY = "paperdrop-settings-v1";
@@ -54,8 +52,6 @@ const defaults: Settings = {
   restoreDrafts: true,
   uploadNotifications: true,
   textSize: "normal",
-  highContrast: false,
-  language: "english"
 };
 
 const settingOptions: Partial<Record<keyof Settings, readonly string[]>> = {
@@ -66,7 +62,6 @@ const settingOptions: Partial<Record<keyof Settings, readonly string[]>> = {
   cardDensity: ["comfortable", "compact"],
   sort: ["relevance", "newest", "az"],
   textSize: ["normal", "large", "xlarge"],
-  language: ["english", "hinglish"],
 };
 
 function readSettings(): Settings {
@@ -106,14 +101,11 @@ function applySettings(s: Settings) {
   root.dataset.pdDownloadConfirm = String(s.downloadConfirm);
   root.dataset.pdRestoreDrafts = String(s.restoreDrafts);
   root.dataset.pdUploadNotifications = String(s.uploadNotifications);
-  root.dataset.pdLanguage = s.language;
-  root.lang = s.language === "hinglish" ? "en-IN" : "en";
   if (typeof window !== "undefined") window.dispatchEvent(new CustomEvent("paperdrop-settings-change", { detail: s }));
   root.classList.toggle("pd-anime-background", s.animeBackground);
   root.classList.toggle("pd-animated-background", s.animatedBackground && !s.performance);
   root.classList.toggle("pd-smooth-scroll", s.smoothScroll && s.motion !== "off");
   root.classList.toggle("pd-performance-mode", s.performance);
-  root.classList.toggle("pd-high-contrast", s.highContrast);
 }
 
 function SettingRow({ title, description, children }: { title: string; description?: string; children: ReactNode }) {
@@ -266,7 +258,6 @@ export default function SettingsPanel({ onClose, onToast }: { onClose: () => voi
 
         {section("accessibility", "Accessibility", "◉", <>
           <SettingRow title="Text size"><Segmented value={settings.textSize} options={[["normal","Normal"],["large","Large"],["xlarge","XL"]]} onChange={v => patch("textSize", v as Settings["textSize"])} /></SettingRow>
-          <SettingRow title="High contrast" description="Increase separation between text and surfaces."><Toggle value={settings.highContrast} onChange={v => patch("highContrast", v)} label="High contrast" /></SettingRow>
         </>)}
 
         {section("data", "Privacy & local data", "⌁", <>
@@ -274,9 +265,6 @@ export default function SettingsPanel({ onClose, onToast }: { onClose: () => voi
           <SettingRow title="Reset settings" description="Return every PAPERDROP preference to its default."><button className="pd-setting-action is-danger" type="button" onClick={reset}>Reset</button></SettingRow>
         </>)}
 
-        {section("language", "Language", "文", <>
-          <SettingRow title="Interface language" description="Choose the language hint used by PAPERDROP."><Segmented value={settings.language} options={[["english","English"],["hinglish","Hinglish"]]} onChange={v => patch("language", v as Settings["language"])} /></SettingRow><div className="pd-settings-note"><strong>{settings.language === "hinglish" ? "Hinglish mode" : "English mode"}</strong><span>{settings.language === "hinglish" ? "India-friendly interface semantics are enabled where supported." : "Standard English interface semantics are enabled."}</span></div>
-        </>)}
 
         {section("updates", "What’s New", "✦", <div className="pd-update-log">
           <div className="pd-update-intro"><span className="pd-update-orb">✦</span><div><strong>Recent changes</strong><p>See what has changed in PAPERDROPL lately.</p></div></div>
