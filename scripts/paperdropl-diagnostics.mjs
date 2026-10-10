@@ -215,7 +215,15 @@ check("React component structure", () => {
   const failures = [];
   for (const file of sourceFiles()) {
     const text = fs.readFileSync(file, "utf8");
-    if (/export\s+default\s+function\s+[A-Za-z]/.test(text) && !/return\s*\(/.test(text) && !/return\s+</.test(text)) {
+    const exitsThroughNextNavigation =
+      /from\s+["']next\/navigation["']/.test(text) &&
+      /\b(?:redirect|permanentRedirect|notFound)\s*\(/.test(text);
+    if (
+      /export\s+default\s+function\s+[A-Za-z]/.test(text) &&
+      !/return\s*\(/.test(text) &&
+      !/return\s+</.test(text) &&
+      !exitsThroughNextNavigation
+    ) {
       failures.push(relative(file));
     }
   }

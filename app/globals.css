@@ -2550,3 +2550,218 @@ html.pd-performance-mode .pd-update-orb,html[data-pd-motion="off"] .pd-update-or
     background-position: center top !important;
   }
 }
+
+/* Apply appearance themes to the complete app, including fixed panels and
+   dialogs whose base styles otherwise keep their original dark surfaces. */
+html[data-pd-theme="dark"] {
+  color-scheme: dark;
+}
+
+html[data-pd-theme="light"] {
+  color-scheme: light;
+  background: #f3f6fc !important;
+  --pd-theme-page: #f3f6fc;
+  --pd-theme-surface: rgba(255, 255, 255, 0.94);
+  --pd-theme-raised: #ffffff;
+  --pd-theme-text: #172038;
+  --pd-theme-muted: #5b6680;
+  --pd-theme-border: rgba(31, 48, 80, 0.14);
+}
+
+html[data-pd-theme="light"] body,
+html[data-pd-theme="light"] .pd-page {
+  background: var(--pd-theme-page) !important;
+  color: var(--pd-theme-text) !important;
+}
+
+html[data-pd-theme="light"] .pd-page::before {
+  opacity: 0.06 !important;
+}
+
+html[data-pd-theme="light"] .pd-nav,
+html[data-pd-theme="light"] .pd-bottom-nav,
+html[data-pd-theme="light"] .pd-stats,
+html[data-pd-theme="light"] .pd-subject-card,
+html[data-pd-theme="light"] .pd-guide,
+html[data-pd-theme="light"] .pd-quote,
+html[data-pd-theme="light"] .pd-features,
+html[data-pd-theme="light"] .pd-footer,
+html[data-pd-theme="light"] .pd-search,
+html[data-pd-theme="light"] .pd-search-popover,
+html[data-pd-theme="light"] .pd-world,
+html[data-pd-theme="light"] .pd-doc-card,
+html[data-pd-theme="light"] .pd-doc-modal,
+html[data-pd-theme="light"] .pd-uploader,
+html[data-pd-theme="light"] .pd-search-panel,
+html[data-pd-theme="light"] .pd-search-panel-input,
+html[data-pd-theme="light"] .pd-settings-panel,
+html[data-pd-theme="light"] .pd-settings-note,
+html[data-pd-theme="light"] .pd-settings-about,
+html[data-pd-theme="light"] .pd-update-card,
+html[data-pd-theme="light"] .pd-detail-grid div,
+html[data-pd-theme="light"] .pd-upload-message,
+html[data-pd-theme="light"] .pd-search-banner {
+  background: var(--pd-theme-surface) !important;
+  border-color: var(--pd-theme-border) !important;
+  color: var(--pd-theme-text) !important;
+}
+
+html[data-pd-theme="light"] .pd-nav,
+html[data-pd-theme="light"] .pd-bottom-nav,
+html[data-pd-theme="light"] .pd-search-panel,
+html[data-pd-theme="light"] .pd-settings-panel,
+html[data-pd-theme="light"] .pd-uploader,
+html[data-pd-theme="light"] .pd-world,
+html[data-pd-theme="light"] .pd-doc-modal {
+  background: var(--pd-theme-raised) !important;
+}
+
+html[data-pd-theme="light"] .pd-page :is(
+  .pd-journey,
+  .pd-hero-center > p,
+  .pd-section-head h2,
+  .pd-subject-card > span,
+  .pd-subject-card p,
+  .pd-stat span,
+  .pd-stat small,
+  .pd-feature p,
+  .pd-quote cite,
+  .pd-vertical small,
+  .pd-library-error p,
+  .pd-doc-meta,
+  .pd-doc-copy p
+),
+html[data-pd-theme="light"] .pd-world > p,
+html[data-pd-theme="light"] .pd-world > .pd-breadcrumbs,
+html[data-pd-theme="light"] .pd-doc-modal-body p,
+html[data-pd-theme="light"] .pd-uploader p,
+html[data-pd-theme="light"] .pd-uploader-footer,
+html[data-pd-theme="light"] .pd-search-panel-head p,
+html[data-pd-theme="light"] .pd-search-panel-meta,
+html[data-pd-theme="light"] .pd-search-panel-foot,
+html[data-pd-theme="light"] .pd-search-panel-result small,
+html[data-pd-theme="light"] .pd-search-empty span,
+html[data-pd-theme="light"] .pd-search-shortcut,
+html[data-pd-theme="light"] .pd-search-scope button,
+html[data-pd-theme="light"] .pd-settings-titlebar p,
+html[data-pd-theme="light"] .pd-setting-copy span,
+html[data-pd-theme="light"] .pd-settings-note span,
+html[data-pd-theme="light"] .pd-settings-about span,
+html[data-pd-theme="light"] .pd-settings-about small,
+html[data-pd-theme="light"] .pd-update-card p {
+  color: var(--pd-theme-muted) !important;
+}
+
+html[data-pd-theme="light"] .pd-nav nav a,
+html[data-pd-theme="light"] .pd-logo,
+html[data-pd-theme="light"] .pd-logo span,
+html[data-pd-theme="light"] .pd-nav-actions .pd-admin-link,
+html[data-pd-theme="light"] .pd-section-head button,
+html[data-pd-theme="light"] .pd-search-result,
+html[data-pd-theme="light"] .pd-doc-copy,
+html[data-pd-theme="light"] .pd-doc-modal-body,
+html[data-pd-theme="light"] .pd-settings-section-head,
+html[data-pd-theme="light"] .pd-setting-copy strong,
+html[data-pd-theme="light"] .pd-settings-close,
+html[data-pd-theme="light"] .pd-update-card h3,
+html[data-pd-theme="light"] .pd-world .pd-back,
+html[data-pd-theme="light"] .pd-world .pd-child-row button,
+html[data-pd-theme="light"] .pd-secondary,
+html[data-pd-theme="light"] .pd-secondary-sm,
+html[data-pd-theme="light"] .pd-search-panel-close,
+html[data-pd-theme="light"] .pd-icon-button,
+html[data-pd-theme="light"] .pd-modal-close {
+  color: var(--pd-theme-text) !important;
+}
+
+html[data-pd-theme="light"] .pd-secondary,
+html[data-pd-theme="light"] .pd-secondary-sm,
+html[data-pd-theme="light"] .pd-search-panel-close,
+html[data-pd-theme="light"] .pd-icon-button,
+html[data-pd-theme="light"] .pd-modal-close,
+html[data-pd-theme="light"] .pd-world .pd-child-row button {
+  background: #f7f9fd !important;
+  border-color: var(--pd-theme-border) !important;
+}
+
+html[data-pd-theme="light"] .pd-section-head button,
+html[data-pd-theme="light"] .pd-search-tools select,
+html[data-pd-theme="light"] .pd-search-selects select,
+html[data-pd-theme="light"] .pd-search-panel select,
+html[data-pd-theme="light"] .pd-uploader select,
+html[data-pd-theme="light"] .pd-mini-modal select,
+html[data-pd-theme="light"] .pd-mini-modal textarea {
+  background: #f7f9fd !important;
+  border-color: var(--pd-theme-border) !important;
+  color: var(--pd-theme-text) !important;
+}
+
+html[data-pd-theme="light"] .pd-search input,
+html[data-pd-theme="light"] .pd-search-panel-input input {
+  color: var(--pd-theme-text) !important;
+}
+
+html[data-pd-theme="light"] .pd-search input::placeholder,
+html[data-pd-theme="light"] .pd-search-panel-input input::placeholder {
+  color: #68748c !important;
+}
+
+html[data-pd-theme="light"] .pd-page .pd-feature {
+  border-color: var(--pd-theme-border) !important;
+}
+
+html[data-pd-theme="light"] .pd-queue-item,
+html[data-pd-theme="light"] .pd-dropzone,
+html[data-pd-theme="light"] .pd-search-panel-result,
+html[data-pd-theme="light"] .pd-search-panel-result:hover,
+html[data-pd-theme="light"] .pd-detail-grid div {
+  background-color: #f7f9fd !important;
+}
+
+html[data-pd-theme="amoled"] {
+  color-scheme: dark;
+  background: #000 !important;
+}
+
+html[data-pd-theme="amoled"] body,
+html[data-pd-theme="amoled"] .pd-page,
+html[data-pd-theme="amoled"] .pd-nav,
+html[data-pd-theme="amoled"] .pd-bottom-nav,
+html[data-pd-theme="amoled"] .pd-stats,
+html[data-pd-theme="amoled"] .pd-subject-card,
+html[data-pd-theme="amoled"] .pd-guide,
+html[data-pd-theme="amoled"] .pd-features,
+html[data-pd-theme="amoled"] .pd-footer,
+html[data-pd-theme="amoled"] .pd-search-popover,
+html[data-pd-theme="amoled"] .pd-world,
+html[data-pd-theme="amoled"] .pd-doc-card,
+html[data-pd-theme="amoled"] .pd-doc-modal,
+html[data-pd-theme="amoled"] .pd-uploader,
+html[data-pd-theme="amoled"] .pd-search-panel,
+html[data-pd-theme="amoled"] .pd-settings-panel,
+html[data-pd-theme="amoled"] .pd-settings-note,
+html[data-pd-theme="amoled"] .pd-settings-about,
+html[data-pd-theme="amoled"] .pd-update-card {
+  background: #000 !important;
+  border-color: rgba(255, 255, 255, 0.12) !important;
+  color: #f3f5ff !important;
+}
+
+html[data-pd-theme="amoled"] .pd-page::before {
+  opacity: 0 !important;
+}
+
+html[data-pd-theme="amoled"] .pd-subject-card,
+html[data-pd-theme="amoled"] .pd-doc-card,
+html[data-pd-theme="amoled"] .pd-settings-panel,
+html[data-pd-theme="amoled"] .pd-uploader,
+html[data-pd-theme="amoled"] .pd-search-panel,
+html[data-pd-theme="amoled"] .pd-doc-modal,
+html[data-pd-theme="amoled"] .pd-world,
+html[data-pd-theme="amoled"] .pd-search,
+html[data-pd-theme="amoled"] .pd-search-panel-input,
+html[data-pd-theme="amoled"] .pd-quote,
+html[data-pd-theme="amoled"] .pd-detail-grid div,
+html[data-pd-theme="amoled"] .pd-doc-thumb {
+  background: #050505 !important;
+}
