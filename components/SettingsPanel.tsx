@@ -230,7 +230,7 @@ export default function SettingsPanel({ onClose, onToast }: { onClose: () => voi
 
       <div className="pd-settings-scroll">
         {section("appearance", "Appearance", "✦", <>
-          <SettingRow title="Theme" description="Choose the base surface."><Segmented value={settings.theme} options={[["dark","Dark"],["amoled","AMOLED"],["light","Light"]]} onChange={v => patch("theme", v as Settings["theme"])} /></SettingRow>
+          <SettingRow title="Theme" description="Choose the base surface."><Segmented value={settings.theme} options={[["dark","Default"],["amoled","Dark"],["light","Light"]]} onChange={v => patch("theme", v as Settings["theme"])} /></SettingRow>
           <SettingRow title="Accent" description="The color used for highlights and actions."><Segmented value={settings.accent} options={[["violet","Violet"],["cyan","Cyan"],["rose","Rose"],["green","Green"]]} onChange={v => patch("accent", v as Settings["accent"])} /></SettingRow>
           <SettingRow title="Anime atmosphere" description="Keep PAPERDROP's illustrated background."><Toggle value={settings.animeBackground} onChange={v => patch("animeBackground", v)} label="Anime atmosphere" /></SettingRow>
           <SettingRow title="Animated background" description="Ambient particles and movement."><Toggle value={settings.animatedBackground} onChange={v => patch("animatedBackground", v)} label="Animated background" /></SettingRow>
