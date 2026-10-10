@@ -27,6 +27,17 @@ type Settings = {
 const KEY = "paperdrop-settings-v1";
 
 const UPDATE_LOG = [
+  { date: "Oct 10, 2026", tag: "IMPROVED", tone: "improved", title: "List view is easier to scan", text: "Section rows are shorter on phones, with larger icons and text; desktop rows have more room. Titles, counts, and descriptions stay in their own places." },
+  { date: "Oct 10, 2026", tag: "NEW", tone: "new", title: "Quick actions on the home page", text: "Use Start here to browse the library or Upload your PDF to share a resource. The PaperDrop idea panel is also easier to read." },
+  { date: "Oct 10, 2026", tag: "IMPROVED", tone: "improved", title: "Appearance controls apply across the page", text: "Default, Dark, and Light themes plus Violet, Cyan, Rose, and Green accents now reach more page elements, including buttons, headings, and navigation." },
+  { date: "Oct 10, 2026", tag: "IMPROVED", tone: "improved", title: "Library and PDF preferences now apply", text: "Grid or List view, card density, sorting, descriptions, opening PDFs in a new tab, and download confirmation are connected to their settings." },
+  { date: "Oct 10, 2026", tag: "FIXED", tone: "fixed", title: "Settings stay in sync", text: "Saved choices load reliably, and Clear local preferences and Reset settings now perform their stated actions." },
+  { date: "Oct 10, 2026", tag: "FIXED", tone: "fixed", title: "Uploads and review are safer", text: "Duplicate checks and recovery for interrupted service responses help preserve pending or published PDFs during uploads and moderation." },
+  { date: "Oct 10, 2026", tag: "IMPROVED", tone: "improved", title: "Deployment checks catch setup errors earlier", text: "Amplify checks now flag dependency, lockfile, and backend configuration failures before deployment proceeds." },
+  { date: "Oct 10, 2026", tag: "REMOVED", tone: "fixed", title: "Settings menu simplified", text: "The unsupported High contrast and Language controls were removed." },
+  { date: "Oct 10, 2026", tag: "FIXED", tone: "fixed", title: "Mobile scenery stays steady while scrolling", text: "The illustrated background no longer resizes with the changing browser toolbar height." },
+  { date: "Oct 7, 2026", tag: "FIXED", tone: "fixed", title: "Desktop background fills the viewport", text: "The illustrated desktop scenery was adjusted to fill the screen." },
+  { date: "Oct 7, 2026", tag: "FIXED", tone: "fixed", title: "Upload section options refresh", text: "The upload section picker refreshes when the available sections change." },
   { date: "Oct 7, 2026", tag: "NEW", tone: "new", title: "What’s New is here", text: "You can now see recent PAPERDROPL changes directly from Settings." },
   { date: "Oct 6, 2026", tag: "IMPROVED", tone: "improved", title: "Smoother interactions", text: "Tap, focus, and mobile interactions were refined for a cleaner feel." },
   { date: "Oct 5, 2026", tag: "IMPROVED", tone: "improved", title: "Settings got more control", text: "Appearance, motion, navigation, library, PDF, upload, and accessibility preferences are easier to manage." },
